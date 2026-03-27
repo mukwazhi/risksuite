@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Notification Center{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <h4 class="mb-3">Notification Center</h4>
+
+            {% comment %} Show only the single most recent notification if provided {% endcomment %}
+            {% if notifications and notifications|length > 0 %}
+                {% with note=notifications.0 %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h5 class="card-title mb-1">{{ note.title|default:'Notification' }}</h5>
+                                <p class="card-text text-muted small mb-2">{{ note.timestamp|date:"SHORT_DATETIME_FORMAT" }}</p>
+                                <p class="card-text">{{ note.message|linebreaksbr }}</p>
+                            </div>
+                            <div class="text-end">
+                                {% if not note.read %}
+                                    <span class="badge bg-danger">New</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                    <p class="text-muted mt-3">No notifications to display.</p>
+                    <p class="text-muted">You're all caught up!</p>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{# Owner-specific base template that overrides the sidebar to show a
+   risk-owner-focused navigation. Keeps the overall layout and topnav
+   from `base.html` so UX remains consistent. #}
+
+{% block sidebar %}
+    {% include 'includes/risk_owner_sidenav.html' %}
+{% endblock %}
+
+{% block content %}{% endblock %}

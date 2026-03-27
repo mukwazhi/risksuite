@@ -1,0 +1,1092 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RiskSuite - Risk Details</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <style>
+        /* Django admin font stack and sizing */
+        :root{
+            --admin-font-size: 13px;
+            --admin-line-height: 1.4;
+            --admin-input-vertical: 6px;
+            --admin-input-horizontal: 8px;
+            --admin-radius: 3px;
+        }
+
+        html, body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+                         "Noto Sans", "Liberation Sans", sans-serif;
+            font-size: var(--admin-font-size);
+            line-height: var(--admin-line-height);
+            color: #222;
+            background-color: #f8f9fa;
+        }
+
+        h1,h2,h3,h4,h5,h6 {
+            font-weight: 600;
+            line-height: 1.25;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            color: #111;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+        }
+
+        .card-header {
+            background: #fff;
+            border-bottom: 1px solid #e9ecef;
+            padding-top: .75rem;
+            padding-bottom: .75rem;
+        }
+
+        .info-item {
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 13px;
+            color: #111;
+            margin-bottom: .35rem;
+        }
+
+        .help-text, .small.text-muted {
+            color: #6c757d;
+            font-size: 12px;
+        }
+
+        .badge {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .nav-pills .nav-link {
+            font-size: 13px;
+            color: #495057;
+            border-radius: 4px;
+        }
+        .nav-pills .nav-link.active {
+            background-color: #0d6efd;
+            color: #fff;
+        }
+
+        .table th {
+            border-top: none;
+            font-weight: 600;
+            font-size: 13px;
+            color: #495057;
+        }
+
+        .risk-matrix-cell {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 1rem;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .status-ok { background-color: #d4edda; color: #155724; }
+        .status-caution { background-color: #fff3cd; color: #856404; }
+        .status-breached { background-color: #f8d7da; color: #721c24; }
+        .status-inactive { background-color: #e9ecef; color: #6c757d; }
+
+        .status-pending { background-color: #fff3cd; color: #856404; }
+        .status-completed { background-color: #d4edda; color: #155724; }
+        .status-overdue { background-color: #f8d7da; color: #721c24; }
+        .status-skipped { background-color: #e9ecef; color: #6c757d; }
+
+        .trend-improving { color: #28a745; }
+        .trend-stable { color: #6c757d; }
+        .trend-deteriorating { color: #dc3545; }
+        .trend-new { color: #007bff; }
+
+        .text-muted small, small { font-size: 12px; }
+        
+        /* Collapsible assessment card styling */
+        [data-bs-toggle="collapse"] .fa-chevron-down {
+            transition: transform 0.3s ease;
+        }
+        [data-bs-toggle="collapse"][aria-expanded="true"] .fa-chevron-down {
+            transform: rotate(180deg);
+        }
+        [data-bs-toggle="collapse"]:hover {
+            background-color: #f8f9fa;
+        }
+
+        @media (max-width: 991px) {
+            .col-lg-2.d-none.d-lg-block { display: none !important; }
+        }
+
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .table tbody tr:hover:not(.table-active) {
+            background-color: #f8f9fa;
+            transform: translateX(2px);
+        }
+
+        .table-active {
+            background-color: #e3f2fd !important;
+            border-left: 4px solid #2196F3;
+        }
+
+        .bg-light {
+            background-color: #f8f9fa !important;
+            border-left: 3px solid #6c757d;
+        }
+
+        /* Risk header description styling and increased content padding */
+        .risk-header .risk-description {
+            margin-top: 0.35rem;
+            color: #495057;
+            font-size: 1rem;
+            max-width: 100%;
+            white-space: normal;
+        }
+
+        .content-padding {
+            padding-left: 2.5rem !important;
+            padding-right: 2.5rem !important;
+        }
+    </style>
+</head>
+<body>
+    {% load math_extras risk_extras %}
+    {% include 'includes/topnav.html' %}
+
+    <div class="container-fluid mt-3">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-2 d-none d-lg-block bg-light border-end p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="text-uppercase text-muted fw-bold">Navigation</h6>
+                </div>
+                <ul class="nav nav-pills flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'dashboard' %}">
+                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'create_risk' %}">
+                            <i class="fas fa-plus-circle me-2"></i> New Risk
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'all_risks' %}">
+                            <i class="fas fa-list me-2"></i> All Risks
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="mt-2">
+                    <a href="{% url 'edit_risk' risk_id=risk.risk_id %}" class="btn btn-sm btn-outline-warning w-100 mb-2">
+                        <i class="fas fa-edit me-1"></i> Edit Risk
+                    </a>
+                    <a href="{% url 'add_assessment' risk.risk_id %}?force=1" class="btn btn-sm btn-primary w-100 mb-2">
+                        <i class="fas fa-chart-line me-1"></i> Assess Risk
+                    </a>
+                    <a href="{% url 'add_mitigation' risk.risk_id %}" class="btn btn-sm btn-success w-100 mb-2">
+                        <i class="fas fa-shield-alt me-1"></i> Add Mitigation
+                    </a>
+                    <button class="btn btn-sm btn-outline-secondary w-100 mb-2" onclick="printOverview()">
+                        <i class="fas fa-print me-1"></i> Print Overview
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-lg-10 px-5 content-padding">
+                <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
+                    <div>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                                <li class="breadcrumb-item"><a href="{% url 'all_risks' %}">All Risks</a></li>
+                                <li class="breadcrumb-item active">Risk Details</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <div>
+                        <a href="{% url 'download_risk_report' risk_id=risk.risk_id %}" class="btn btn-success btn-sm" target="_blank">
+                            <i class="fas fa-file-pdf me-2"></i> Download PDF Report
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Risk Header -->
+                        <div class="risk-header mb-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="mb-2">{{ risk.title }}</h2>
+                            <div class="d-flex flex-wrap gap-3">
+                                <span class="badge bg-light text-dark fs-6">{{ risk.risk_id }}</span>
+                                {% if assessments %}
+                                    {% with current_assessment=assessments.0 %}
+                                    {% with score=current_assessment.risk_score %}
+                                    {% if score >= 20 %}
+                                    <span class="badge bg-danger fs-6">Critical Priority</span>
+                                    {% elif score >= 15 %}
+                                    <span class="badge bg-danger fs-6">High Priority</span>
+                                    {% elif score >= 8 %}
+                                    <span class="badge bg-warning fs-6">Medium Priority</span>
+                                    {% else %}
+                                    <span class="badge bg-success fs-6">Low Priority</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                    {% endwith %}
+                                {% else %}
+                                    {% if risk.risk_rating >= 20 %}
+                                    <span class="badge bg-danger fs-6">Critical Priority</span>
+                                    {% elif risk.risk_rating >= 15 %}
+                                    <span class="badge bg-danger fs-6">High Priority</span>
+                                    {% elif risk.risk_rating >= 8 %}
+                                    <span class="badge bg-warning fs-6">Medium Priority</span>
+                                    {% else %}
+                                    <span class="badge bg-success fs-6">Low Priority</span>
+                                    {% endif %}
+                                {% endif %}
+                                {% if risk.is_approved %}
+                                <span class="badge bg-success fs-6">Approved</span>
+                                {% elif risk.park_risk %}
+                                <span class="badge bg-secondary fs-6">Draft</span>
+                                {% else %}
+                                <span class="badge bg-warning fs-6">Pending</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            {% if assessments %}
+                                {% with current_assessment=assessments.0 %}
+                                {% with score=current_assessment.risk_score %}
+                                <div class="fs-1 fw-bold">{{ score }}</div>
+                                {% endwith %}
+                                {% endwith %}
+                            {% else %}
+                                <div class="fs-1 fw-bold">{{ risk.risk_rating }}</div>
+                            {% endif %}
+                            <div class="fs-6">Risk Score</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Risk Details Tabs -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-bottom-0 pt-3">
+                        <ul class="nav nav-pills mb-3" id="riskTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="overview-tab" data-bs-toggle="pill" data-bs-target="#overview" type="button" role="tab">
+                                    <i class="fas fa-info-circle me-2"></i> Overview
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="assessments-tab" data-bs-toggle="pill" data-bs-target="#assessments" type="button" role="tab">
+                                    <i class="fas fa-history me-2"></i> Assessments
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="mitigations-tab" data-bs-toggle="pill" data-bs-target="#mitigations" type="button" role="tab">
+                                    <i class="fas fa-shield-alt me-2"></i> Mitigations
+                                    {% if total_mitigations > 0 %}
+                                    <span class="badge bg-primary ms-1">{{ total_mitigations }}</span>
+                                    {% endif %}
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="riskTabContent">
+                            <!-- Overview Tab -->
+                            <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-12">
+                                        
+                                        <!-- Inherent Risk, Controls, and Residual Risk Section -->
+                                        {% if risk.inherent_likelihood and risk.inherent_impact %}
+                                        <!-- Summary Cards Row - Top Position -->
+                                        <div class="row g-2 mb-4 mt-4">
+                                                    <!-- Inherent Risk Card -->
+                                                    <div class="col-md-3 col-sm-6">
+                                                        {% with score=risk.inherent_risk_score %}
+                                                        <div class="card h-100 {% if score >= 20 %}border-danger{% elif score >= 15 %}border-danger{% elif score >= 8 %}border-warning{% else %}border-success{% endif %}">
+                                                            <div class="card-body text-center py-3">
+                                                                <div class="text-muted" style="font-size: 11px; font-weight: 600;">
+                                                                    <i class="fas fa-exclamation-triangle me-1"></i>INHERENT RISK
+                                                                </div>
+                                                                <div class="fs-2 fw-bold {% if score >= 20 %}text-danger{% elif score >= 15 %}text-danger{% elif score >= 8 %}text-warning{% else %}text-success{% endif %} my-2">
+                                                                    {{ score }}
+                                                                </div>
+                                                                <div style="font-size: 11px;" class="text-muted">
+                                                                    L: {{ risk.inherent_likelihood }} × I: {{ risk.inherent_impact }}
+                                                                </div>
+                                                                <div class="mt-2">
+                                                                    <span class="badge {% if score >= 20 %}bg-danger{% elif score >= 15 %}bg-danger{% elif score >= 8 %}bg-warning text-dark{% else %}bg-success{% endif %}" style="font-size: 10px;">Before Controls</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {% endwith %}
+                                                    </div>
+                                                    
+                                                    <!-- Controls Summary Card -->
+                                                    <div class="col-md-3 col-sm-6">
+                                                        <div class="card border-primary h-100">
+                                                            <div class="card-body text-center py-3">
+                                                                <div class="text-muted" style="font-size: 11px; font-weight: 600;">
+                                                                    <i class="fas fa-shield-alt me-1"></i>ACTIVE CONTROLS
+                                                                </div>
+                                                                <div class="fs-2 fw-bold text-primary my-2">
+                                                                    {{ controls.count }}
+                                                                </div>
+                                                                {% if residual_risk_data %}
+                                                                <div style="font-size: 11px;" class="text-muted mb-1">
+                                                                    Avg: {{ residual_risk_data.control_effectiveness }}%
+                                                                </div>
+                                                                <div class="progress" style="height: 6px;">
+                                                                    <div class="progress-bar bg-primary" role="progressbar" 
+                                                                         style="width: {{ residual_risk_data.control_effectiveness }}%"></div>
+                                                                </div>
+                                                                {% else %}
+                                                                <div style="font-size: 11px;" class="text-muted">
+                                                                    Mitigating Risk
+                                                                </div>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Post Control Residual Risk Card -->
+                                                    <div class="col-md-3 col-sm-6">
+                                                        {% if residual_risk_data %}
+                                                        <div class="card {{ residual_risk_data.residual_score|default:risk.risk_score|risk_border }} h-100">
+                                                            <div class="card-body text-center py-3">
+                                                                <div class="text-muted" style="font-size: 11px; font-weight: 600;">
+                                                                    <i class="fas fa-calculator me-1"></i>POST CONTROL RESIDUAL
+                                                                </div>
+                                                                <div class="fs-2 fw-bold {{ residual_risk_data.residual_score|default:risk.risk_score|risk_text }} my-2">
+                                                                    {{ residual_risk_data.residual_score }}
+                                                                </div>
+                                                                <div style="font-size: 11px;" class="text-muted">
+                                                                    L: {{ residual_risk_data.residual_likelihood }} × I: {{ residual_risk_data.residual_impact }}
+                                                                </div>
+                                                                <div class="mt-2">
+                                                                    <span class="{{ residual_risk_data.residual_score|default:risk.risk_score|risk_badge }}" style="font-size: 10px;">
+                                                                        <i class="fas fa-arrow-down me-1"></i>{{ residual_risk_data.risk_reduction_pct }}% Reduction
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {% else %}
+                                                        <div class="card border-secondary h-100">
+                                                            <div class="card-body text-center py-3">
+                                                                <div class="text-muted" style="font-size: 11px; font-weight: 600;">
+                                                                    <i class="fas fa-calculator me-1"></i>POST CONTROL RESIDUAL
+                                                                </div>
+                                                                <div class="fs-2 fw-bold text-muted my-2">
+                                                                    {{ risk.risk_score }}
+                                                                </div>
+                                                                <div style="font-size: 11px;" class="text-muted">
+                                                                    Current Level
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {% endif %}
+                                                    </div>
+                                                    
+                                                    <!-- Assessed/Current Residual Risk Card -->
+                                                    <div class="col-md-3 col-sm-6">
+                                                        <div class="card {{ risk.risk_score|risk_border }} h-100">
+                                                            <div class="card-body text-center py-3">
+                                                                <div class="text-muted" style="font-size: 11px; font-weight: 600;">
+                                                                    <i class="fas fa-chart-line me-1"></i>ASSESSED/CURRENT
+                                                                </div>
+                                                                <div class="fs-2 fw-bold {{ risk.risk_score|risk_text }} my-2">{{ risk.risk_score }}</div>
+                                                                <div style="font-size: 11px;" class="text-muted">
+                                                                    L: {{ risk.likelihood }} × I: {{ risk.impact }}
+                                                                </div>
+                                                                <div class="mt-2">
+                                                                    <span class="badge {{ risk.risk_score|risk_badge }}" style="font-size: 10px;">{{ risk.risk_score|risk_level_label }}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <!-- Risk Description Card -->
+                                        <div class="card border-0 bg-light {% if risk.inherent_likelihood and risk.inherent_impact %}mt-4{% endif %}">
+                                            <div class="card-body">
+                                                <h5 class="card-title mb-3">Risk Description</h5>
+                                                <div>{{ risk.description|default:"No description provided"|linebreaks }}</div>
+                                                
+                                                <h5 class="card-title mt-4 mb-3">Cause</h5>
+                                                <div>{{ risk.cause|default:"No cause provided"|linebreaks }}</div>
+                                                
+                                                <h5 class="card-title mt-4 mb-3">Business Impact</h5>
+                                                <div>{{ risk.impact_description|default:"No impact description provided"|linebreaks }}</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Cross-Category Impact Analysis -->
+                                        {% if risk.category_impacts.exists %}
+                                        <div class="card border-0 mt-4">
+                                            <div class="card-body">
+                                                <h5 class="card-title mb-3">
+                                                    <i class="fas fa-layer-group me-2 text-primary"></i>Cross-Category Impact Analysis
+                                                </h5>
+                                                <p class="text-muted small mb-3">This risk affects multiple categories with varying severity levels:</p>
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm table-hover align-middle">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th>Category</th>
+                                                                <th class="text-center">Impact</th>
+                                                                <th class="text-center">Likelihood</th>
+                                                                <th class="text-center">Score</th>
+                                                                <th class="text-center">Rating</th>
+                                                                <th>Impact Notes</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr>
+                                                                <td>
+                                                                    
+                                                                    <span class="badge {{ risk.risk_score|risk_badge }}">{{ risk.category.name }}</span>
+                                                                    <small class="text-muted">(Primary)</small>
+                                                                </td>
+                                                                <td class="text-center">{{ risk.impact }}</td>
+                                                                <td class="text-center">{{ risk.likelihood }}</td>
+                                                                <td class="text-center fw-bold">{{ risk.risk_score }}</td>
+                                                                <td class="text-center">
+                                                                    
+                                                                    <span class="badge {{ risk.risk_score|risk_badge }}">{{ risk.risk_score|risk_level_label }}</span>
+                                                                </td>
+                                                                <td class="small text-muted">{{ risk.impact_description|truncatewords:10 }}</td>
+                                                            </tr>
+                                                            {% for ci in risk.category_impacts.all %}
+                                                            <tr>
+                                                                <td><span class="badge bg-{{ ci.rating_color }}">{{ ci.category.name }}</span></td>
+                                                                <td class="text-center">{{ ci.impact }}</td>
+                                                                <td class="text-center">{{ ci.likelihood }}</td>
+                                                                <td class="text-center fw-bold">{{ ci.score }}</td>
+                                                                <td class="text-center">
+                                                                    <span class="badge bg-{{ ci.rating_color }}">{{ ci.risk_rating }}</span>
+                                                                </td>
+                                                                <td class="small">{{ ci.notes|default:"—" }}</td>
+                                                            </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                <div class="alert alert-info mt-3 py-2">
+                                                    <i class="fas fa-info-circle me-2"></i>
+                                                    <small><strong>Maximum Impact Across Categories:</strong> Score {{ risk.max_score }} affecting {{ risk.affected_categories_count|add:1 }} category(ies)</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <!-- Internal Controls Table -->
+                                        {% if controls %}
+                                        <div class="card border-0 mt-4">
+                                            <div class="card-body">
+                                                <h5 class="card-title mb-3">
+                                                    <i class="fas fa-shield-alt me-2 text-primary"></i>Internal Controls & Effectiveness
+                                                </h5>
+                                                <p class="text-muted small mb-3">
+                                                    Active controls implemented to mitigate this risk. Total effectiveness: 
+                                                    {% if residual_risk_data %}
+                                                    <span class="badge bg-primary">{{ residual_risk_data.control_effectiveness }}%</span>
+                                                    {% else %}
+                                                    <span class="badge bg-secondary">Calculating...</span>
+                                                    {% endif %}
+                                                </p>
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover align-middle">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th style="width: 5%">#</th>
+                                                                <th style="width: 35%">Control Description</th>
+                                                                <th style="width: 15%" class="text-center">Type</th>
+                                                                <th style="width: 12%" class="text-center">Weight</th>
+                                                                <th style="width: 20%" class="text-center">Effectiveness</th>
+                                                                <th style="width: 13%" class="text-center">Status</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for control in controls %}
+                                                            <tr>
+                                                                <td class="text-muted">{{ forloop.counter }}</td>
+                                                                <td>
+                                                                    <div class="fw-bold">{{ control.name|truncatewords:8 }}</div>
+                                                                    {% if control.description %}
+                                                                    <small class="text-muted">{{ control.description|truncatewords:15 }}</small>
+                                                                    {% endif %}
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    {% if control.control_type == 'Preventive' %}
+                                                                    <span class="badge bg-info"><i class="fas fa-shield-alt me-1"></i>Preventive</span>
+                                                                    {% elif control.control_type == 'Detective' %}
+                                                                    <span class="badge bg-warning text-dark"><i class="fas fa-search me-1"></i>Detective</span>
+                                                                    {% elif control.control_type == 'Corrective' %}
+                                                                    <span class="badge bg-success"><i class="fas fa-wrench me-1"></i>Corrective</span>
+                                                                    {% else %}
+                                                                    <span class="badge bg-secondary">{{ control.control_type }}</span>
+                                                                    {% endif %}
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    <span class="badge bg-dark">{{ control.weight }}%</span>
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    <div class="progress" style="height: 20px;">
+                                                                        <div class="progress-bar {% if control.effectiveness >= 80 %}bg-success{% elif control.effectiveness >= 60 %}bg-primary{% elif control.effectiveness >= 40 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                                             role="progressbar" 
+                                                                             style="width: {{ control.effectiveness }}%"
+                                                                             aria-valuenow="{{ control.effectiveness }}" 
+                                                                             aria-valuemin="0" 
+                                                                             aria-valuemax="100">
+                                                                            {{ control.effectiveness }}%
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    {% if control.is_active %}
+                                                                    <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Active</span>
+                                                                    {% else %}
+                                                                    <span class="badge bg-secondary">Inactive</span>
+                                                                    {% endif %}
+                                                                </td>
+                                                            </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                
+                                                <!-- Control Type Distribution -->
+                                                {% if controls %}
+                                                <div class="row mt-4">
+                                                    <div class="col-md-12">
+                                                        <h6 class="text-muted mb-3"><i class="fas fa-chart-pie me-2"></i>Control Type Distribution</h6>
+                                                        <div class="row g-2">
+                                                            <div class="col-md-3">
+                                                                <div class="card border-info">
+                                                                    <div class="card-body text-center py-2">
+                                                                        <small class="text-muted">Preventive</small>
+                                                                        <div class="fs-4 fw-bold text-info">
+                                                                            {{ control_distribution.preventive }}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <div class="card border-warning">
+                                                                    <div class="card-body text-center py-2">
+                                                                        <small class="text-muted">Detective</small>
+                                                                        <div class="fs-4 fw-bold text-warning">{{ control_distribution.detective }}</div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <div class="card border-success">
+                                                                    <div class="card-body text-center py-2">
+                                                                        <small class="text-muted">Corrective</small>
+                                                                        <div class="fs-4 fw-bold text-success">{{ control_distribution.corrective }}</div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <div class="card border-primary">
+                                                                    <div class="card-body text-center py-2">
+                                                                        <small class="text-muted">Directive</small>
+                                                                        <div class="fs-4 fw-bold text-primary">{{ control_distribution.directive }}</div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                                
+                                                <!-- About Controls Info Box -->
+                                                <div class="alert alert-light border mt-3 mb-0">
+                                                    <h6 class="alert-heading"><i class="fas fa-info-circle me-2 text-primary"></i>About Controls</h6>
+                                                    <small class="text-muted">
+                                                        <strong>Preventive:</strong> Stop risks before they occur (80% likelihood, 20% impact reduction)<br>
+                                                        <strong>Detective:</strong> Identify risks when they happen (30% likelihood, 70% impact reduction)<br>
+                                                        <strong>Corrective:</strong> Fix issues after they occur (10% likelihood, 90% impact reduction)<br>
+                                                        <strong>Directive:</strong> Guide behavior to reduce risk (50% likelihood, 50% impact reduction)<br>
+                                                        <strong>Weight:</strong> Relative importance of each control (1-10 scale)
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <div class="card border-0 mt-4">
+                                            <div class="card-body text-center py-4">
+                                                <i class="fas fa-shield-alt fa-3x text-muted mb-3"></i>
+                                                <h5 class="text-muted">No Controls Defined</h5>
+                                                <p class="text-muted small">Internal controls help mitigate this risk. Controls are currently managed through the admin panel.</p>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+
+                                </div>
+                            </div>
+                            
+                            <!-- Risk Assessments Tab -->
+                            <div class="tab-pane fade" id="assessments" role="tabpanel">
+                                <!-- Recent Assessment History -->
+                                {% if all_assessments_with_indicators %}
+                                <div class="card border-0">
+                                    <div class="card-header bg-white border-bottom">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0 fw-bold"><i class="fas fa-history me-2 text-muted"></i>Assessment History</h6>
+                                            <a href="{% url 'add_assessment' risk.risk_id %}?force=1" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-plus-circle me-1"></i> New Assessment
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-hover mb-0 align-middle">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th style="width: 5%"></th>
+                                                        <th style="width: 18%">Date</th>
+                                                        <th style="width: 18%" class="text-center">Score</th>
+                                                        <th style="width: 18%" class="text-center">Rating</th>
+                                                        <th style="width: 23%" class="text-center">KRI Status</th>
+                                                        <th style="width: 18%" class="text-center">Trend</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for assessment_data in all_assessments_with_indicators %}
+                                                    <tr {% if forloop.first %}class="table-primary"{% endif %} style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#indicators{{ forloop.counter }}" aria-expanded="false">
+                                                        <td class="text-center">
+                                                            <i class="fas fa-chevron-down"></i>
+                                                        </td>
+                                                        <td>
+                                                            {{ assessment_data.assessment.assessment_date|date:"M d, Y" }}
+                                                            {% if forloop.first %}
+                                                            <span class="badge bg-primary ms-1">Latest</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <span class="fw-bold fs-5">{{ assessment_data.assessment.risk_score }}</span>
+                                                            <small class="text-muted">/25</small>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            {% if assessment_data.assessment.risk_score >= 20 %}
+                                                            <span class="badge bg-danger">Critical</span>
+                                                            {% elif assessment_data.assessment.risk_score >= 15 %}
+                                                            <span class="badge bg-danger">High</span>
+                                                            {% elif assessment_data.assessment.risk_score >= 8 %}
+                                                            <span class="badge bg-warning text-dark">Medium</span>
+                                                            {% else %}
+                                                            <span class="badge bg-success">Low</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <div class="d-flex justify-content-center gap-1">
+                                                                {% if assessment_data.total_indicators > 0 %}
+                                                                <span class="badge bg-success" title="On Target">{{ assessment_data.on_target }}</span>
+                                                                <span class="badge bg-warning" title="Caution">{{ assessment_data.caution }}</span>
+                                                                <span class="badge bg-danger" title="Breached">{{ assessment_data.breached }}</span>
+                                                                {% else %}
+                                                                <span class="text-muted small">No KRIs</span>
+                                                                {% endif %}
+                                                            </div>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            {% if assessment_data.assessment.trend == 'improving' %}
+                                                            <span class="text-success"><i class="fas fa-arrow-down me-1"></i>Improving</span>
+                                                            {% elif assessment_data.assessment.trend == 'deteriorating' %}
+                                                            <span class="text-danger"><i class="fas fa-arrow-up me-1"></i>Deteriorating</span>
+                                                            {% elif assessment_data.assessment.trend == 'stable' %}
+                                                            <span class="text-secondary"><i class="fas fa-minus me-1"></i>Stable</span>
+                                                            {% else %}
+                                                            <span class="text-muted"><i class="fas fa-circle me-1"></i>New</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    <!-- Collapsible Indicator Details Row -->
+                                                    <tr class="collapse" id="indicators{{ forloop.counter }}">
+                                                        <td colspan="6" class="p-0">
+                                                            <div class="bg-light p-3">
+                                                                {% if assessment_data.indicator_assessments %}
+                                                                <h6 class="fw-bold mb-3">
+                                                                    <i class="fas fa-tachometer-alt me-1 text-primary"></i>
+                                                                    Key Risk Indicator Details
+                                                                </h6>
+                                                                <div class="table-responsive">
+                                                                    <table class="table table-sm table-bordered bg-white mb-0">
+                                                                        <thead class="table-light">
+                                                                            <tr>
+                                                                                <th style="width: 5%">#</th>
+                                                                                <th style="width: 30%">Indicator</th>
+                                                                                <th style="width: 15%" class="text-center">Value</th>
+                                                                                <th style="width: 15%" class="text-center">Status</th>
+                                                                                <th style="width: 10%" class="text-center">Trend</th>
+                                                                                <th style="width: 25%">Notes</th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                            {% for ind_assessment in assessment_data.indicator_assessments %}
+                                                                            <tr>
+                                                                                <td class="text-muted small">{{ forloop.counter }}</td>
+                                                                                <td>
+                                                                                    <a href="{% url 'indicator_assessment_history' indicator_id=ind_assessment.indicator.id %}?as_of={{ assessment_data.assessment.assessment_date|date:'Y-m-d' }}" class="text-decoration-none">
+                                                                                        <strong class="small">{{ ind_assessment.indicator.preferred_kpi_name|default:ind_assessment.indicator.name }}</strong>
+                                                                                        <i class="fas fa-external-link-alt ms-1" style="font-size: 0.7em;"></i>
+                                                                                    </a>
+                                                                                </td>
+                                                                                <td class="text-center">
+                                                                                    <span class="badge bg-light text-dark border">
+                                                                                        {{ ind_assessment.measured_value|floatformat:2 }}
+                                                                                        {% if ind_assessment.indicator.unit %}{{ ind_assessment.indicator.unit }}{% endif %}
+                                                                                    </span>
+                                                                                </td>
+                                                                                <td class="text-center">
+                                                                                    {% if ind_assessment.status == 'on_target' %}
+                                                                                    <span class="badge bg-success">On Target</span>
+                                                                                    {% elif ind_assessment.status == 'caution' %}
+                                                                                    <span class="badge bg-warning">Caution</span>
+                                                                                    {% elif ind_assessment.status == 'breached' %}
+                                                                                    <span class="badge bg-danger">Breached</span>
+                                                                                    {% else %}
+                                                                                    <span class="badge bg-secondary">{{ ind_assessment.get_status_display }}</span>
+                                                                                    {% endif %}
+                                                                                </td>
+                                                                                <td class="text-center small">
+                                                                                    {% if ind_assessment.trend == 'improving' %}
+                                                                                    <span class="text-success"><i class="fas fa-arrow-down"></i></span>
+                                                                                    {% elif ind_assessment.trend == 'deteriorating' %}
+                                                                                    <span class="text-danger"><i class="fas fa-arrow-up"></i></span>
+                                                                                    {% elif ind_assessment.trend == 'stable' %}
+                                                                                    <span class="text-secondary"><i class="fas fa-minus"></i></span>
+                                                                                    {% else %}
+                                                                                    <span class="text-info"><i class="fas fa-circle"></i></span>
+                                                                                    {% endif %}
+                                                                                </td>
+                                                                                <td class="small text-muted">
+                                                                                    {{ ind_assessment.notes|default:"—"|truncatewords:10 }}
+                                                                                </td>
+                                                                            </tr>
+                                                                            {% endfor %}
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
+                                                                {% else %}
+                                                                <div class="alert alert-warning mb-0">
+                                                                    <i class="fas fa-exclamation-triangle me-1"></i> No KRI assessments linked to this risk assessment.
+                                                                </div>
+                                                                {% endif %}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i> 
+                                    <strong>No risk assessments yet.</strong>
+                                    {% if indicators %}
+                                    Risk assessments are automatically generated after you assess all Key Risk Indicators.
+                                    <br><a href="{% url 'add_assessment' risk.risk_id %}" class="alert-link">Start assessing indicators →</a>
+                                    {% else %}
+                                    Please add Key Risk Indicators first, then assess them to generate an overall risk assessment.
+                                    <br><a href="{% url 'add_indicator' risk.risk_id %}" class="alert-link">Add Key Risk Indicators</a>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Mitigations Tab -->
+                            <div class="tab-pane fade" id="mitigations" role="tabpanel">
+                                {% if total_mitigations > 0 %}
+                                <div class="card border-0">
+                                    <div class="card-header bg-white border-bottom">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0 fw-bold">
+                                                <i class="fas fa-tasks me-2 text-muted"></i>Mitigation Actions
+                                            </h6>
+                                            <div class="d-flex align-items-center">
+                                                <div>
+                                                    <span class="badge bg-success me-1">{{ completed_mitigations }} Completed</span>
+                                                    <span class="badge bg-primary me-1">{{ in_progress_mitigations }} In Progress</span>
+                                                    <span class="badge bg-warning text-dark">{{ pending_mitigations }} Pending</span>
+                                                </div>
+                                                <a href="{% url 'mitigations_history' %}" class="btn btn-sm btn-outline-secondary ms-3" title="View full mitigation history">History</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <!-- Overall Mitigation Progress (professional layout) -->
+                                        <div class="p-3 bg-light border-bottom">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="me-3 flex-grow-1">
+                                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                                        <div class="fw-bold text-muted small">Overall Mitigation Progress</div>
+                                                        <div class="text-muted small">Updated: {% now "M d, Y" %}</div>
+                                                    </div>
+                                                    <div class="progress" style="height: 14px; background-color:#e9ecef;">
+                                                        <div class="progress-bar" role="progressbar"
+                                                             style="width: {{ mitigation_progress }}%; background-color: {% if mitigation_progress >= 80 %}#198754{% elif mitigation_progress >= 50 %}#0d6efd{% elif mitigation_progress >= 30 %}#ffc107{% else %}#dc3545{% endif %};"
+                                                             aria-valuenow="{{ mitigation_progress }}" aria-valuemin="0" aria-valuemax="100">
+                                                        </div>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between mt-2 small text-muted">
+                                                        <div>Completed: <span class="fw-bold text-success">{{ completed_mitigations }}</span></div>
+                                                        <div>In progress: <span class="fw-bold text-primary">{{ in_progress_mitigations }}</span></div>
+                                                        <div>Overdue: <span class="fw-bold text-danger">{{ overdue_mitigations }}</span></div>
+                                                    </div>
+                                                </div>
+                                                <div class="text-end ms-3" style="min-width:110px;">
+                                                    <div class="fs-3 fw-bold">{{ mitigation_progress }}%</div>
+                                                    <div class="small text-muted">Overall completion</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Mitigations Table -->
+                                        <div class="table-responsive">
+                                            <table class="table table-hover mb-0 align-middle">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th style="width: 5%">#</th>
+                                                        <th style="width: 15%">Strategy</th>
+                                                        <th style="width: 30%">Action</th>
+                                                        <th style="width: 15%" class="text-center">Responsible</th>
+                                                        <th style="width: 10%" class="text-center">Due Date</th>
+                                                        <th style="width: 10%" class="text-center">Progress</th>
+                                                        <th style="width: 15%" class="text-center">Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for pair in mitigation_form_pairs %}
+                                                    {% with mitigation=pair.mitigation form=pair.form %}
+                                                    <tr {% if mitigation.is_overdue %}class="table-danger"{% endif %}>
+                                                        <td class="text-muted">{{ forloop.counter }}</td>
+                                                        <td>
+                                                            {% if mitigation.strategy == 'accept' %}
+                                                            <span class="badge bg-secondary"><i class="fas fa-check me-1"></i>Accept</span>
+                                                            {% elif mitigation.strategy == 'transfer' %}
+                                                            <span class="badge bg-info"><i class="fas fa-exchange-alt me-1"></i>Transfer</span>
+                                                            {% elif mitigation.strategy == 'reduce' %}
+                                                            <span class="badge bg-primary"><i class="fas fa-arrow-down me-1"></i>Reduce</span>
+                                                            {% elif mitigation.strategy == 'avoid' %}
+                                                            <span class="badge bg-warning text-dark"><i class="fas fa-ban me-1"></i>Avoid</span>
+                                                            {% else %}
+                                                            <span class="badge bg-secondary">{{ mitigation.get_strategy_display }}</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>
+                                                            <div class="fw-bold small">{{ mitigation.action|truncatewords:15 }}</div>
+                                                            {% if mitigation.evidence %}
+                                                            <small class="text-muted">
+                                                                <i class="fas fa-paperclip me-1"></i>
+                                                                <a href="{{ mitigation.evidence.url }}" target="_blank" class="text-decoration-none">Evidence</a>
+                                                            </small>
+                                                            {% endif %}
+                                                            {% if mitigation.is_overdue %}
+                                                            <div class="mt-1">
+                                                                <span class="badge bg-danger">
+                                                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                                                    {{ mitigation.days_overdue }} day{{ mitigation.days_overdue|pluralize }} overdue
+                                                                </span>
+                                                            </div>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td class="text-center">
+                                                            {% if mitigation.responsible_person %}
+                                                            <div class="small fw-bold">{{ mitigation.responsible_person.name }}</div>
+                                                            <small class="text-muted">{{ mitigation.responsible_person.department.abbreviation }}</small>
+                                                            {% else %}
+                                                            <span class="text-muted">—</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td class="text-center">
+                                                            {% if mitigation.due_date %}
+                                                            <div class="small {% if mitigation.is_overdue %}text-danger fw-bold{% endif %}">
+                                                                {{ mitigation.due_date|date:"M d, Y" }}
+                                                            </div>
+                                                            {% if mitigation.original_due_date and mitigation.original_due_date != mitigation.due_date %}
+                                                            <small class="text-muted" title="Original: {{ mitigation.original_due_date|date:'M d, Y' }}">
+                                                                <i class="fas fa-calendar-alt"></i> Revised
+                                                            </small>
+                                                            {% endif %}
+                                                            {% if mitigation.postponement_count > 0 %}
+                                                            <div>
+                                                                <span class="badge bg-warning text-dark" style="font-size: 0.65rem;">
+                                                                    <i class="fas fa-clock"></i> Postponed {{ mitigation.postponement_count }}x
+                                                                </span>
+                                                            </div>
+                                                            {% endif %}
+                                                            {% else %}
+                                                            <span class="text-muted">—</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <div class="progress" style="height: 20px; min-width: 60px;">
+                                                                <div class="progress-bar {% if mitigation.completion_percentage >= 100 %}bg-success{% elif mitigation.completion_percentage >= 75 %}bg-primary{% elif mitigation.completion_percentage >= 50 %}bg-info{% elif mitigation.completion_percentage >= 25 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                                     role="progressbar" 
+                                                                     style="width: {{ mitigation.completion_percentage }}%" 
+                                                                     aria-valuenow="{{ mitigation.completion_percentage }}" 
+                                                                     aria-valuemin="0" 
+                                                                     aria-valuemax="100">
+                                                                    <small class="fw-bold">{{ mitigation.completion_percentage }}%</small>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            {% if mitigation.status == 'complete' %}
+                                                            <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Complete</span>
+                                                            {% elif mitigation.status == 'in_progress' %}
+                                                            <span class="badge bg-primary"><i class="fas fa-spinner me-1"></i>In Progress</span>
+                                                            {% elif mitigation.status == 'pending' %}
+                                                            <span class="badge bg-warning text-dark"><i class="fas fa-hourglass-half me-1"></i>Pending</span>
+                                                            {% elif mitigation.status == 'postponed' %}
+                                                            <span class="badge bg-secondary"><i class="fas fa-pause-circle me-1"></i>Postponed</span>
+                                                            {% elif mitigation.status == 'partially_implemented' %}
+                                                            <span class="badge bg-info"><i class="fas fa-tasks me-1"></i>Partial</span>
+                                                            {% elif mitigation.status == 'not_achieved' %}
+                                                            <span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i>Not Achieved</span>
+                                                            {% elif mitigation.status == 'cancelled' %}
+                                                            <span class="badge bg-dark"><i class="fas fa-ban me-1"></i>Cancelled</span>
+                                                            {% else %}
+                                                            <span class="badge bg-secondary">{{ mitigation.get_status_display }}</span>
+                                                            {% endif %}
+                                                            
+                                                            <!-- Edit button to open inline update form -->
+                                                            <button class="btn btn-sm btn-outline-secondary ms-2" data-bs-toggle="collapse" data-bs-target="#mitigation-edit-{{ forloop.counter }}" aria-expanded="false" title="Edit mitigation">
+                                                                <i class="fas fa-edit"></i>
+                                                            </button>
+                                                            <a class="btn btn-sm btn-outline-secondary ms-1" href="{% url 'mitigation_progress_trail' mitigation.pk %}" title="View mitigation history">
+                                                                <i class="fas fa-history"></i>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+
+                                                    <!-- Inline collapsible update form row -->
+                                                    <tr class="collapse" id="mitigation-edit-{{ forloop.counter }}">
+                                                        <td colspan="7" class="p-3 bg-white">
+                                                            <div class="small text-muted mb-2">
+                                                                <strong>Current:</strong>
+                                                                Responsible: {{ mitigation.responsible_person.name|default:"—" }} &nbsp;•&nbsp;
+                                                                Due: {% if mitigation.due_date %}{{ mitigation.due_date|date:"M d, Y" }}{% else %}—{% endif %}
+                                                            </div>
+                                                            {% if form %}
+                                                            <form method="post" action="{% url 'update_mitigation' mitigation.pk %}" enctype="multipart/form-data">
+                                                                {% csrf_token %}
+                                                                <div class="row g-2">
+                                                                    <div class="col-md-3">
+                                                                        <label class="form-label small">Status</label>
+                                                                        {{ form.status }}
+                                                                    </div>
+                                                                    <div class="col-md-2">
+                                                                        <label class="form-label small">Progress %</label>
+                                                                        {{ form.completion_percentage }}
+                                                                    </div>
+                                                                    <div class="col-md-3">
+                                                                        <label class="form-label small">Responsible</label>
+                                                                        {{ form.responsible_person }}
+                                                                    </div>
+                                                                    <div class="col-md-2">
+                                                                        <label class="form-label small">Due Date</label>
+                                                                        {{ form.due_date }}
+                                                                    </div>
+                                                                    <div class="col-md-2">
+                                                                        <label class="form-label small">&nbsp;</label>
+                                                                        <button type="button" class="btn btn-outline-secondary btn-sm w-100" data-bs-toggle="collapse" data-bs-target="#mitigation-edit-{{ forloop.counter }}">Cancel</button>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="row mt-2">
+                                                                    <div class="col-12">
+                                                                        <label class="form-label small">Notes</label>
+                                                                        {{ form.progress_notes }}
+                                                                    </div>
+                                                                </div>
+                                                                <div class="mt-2 d-flex gap-2">
+                                                                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save me-1"></i> Update</button>
+                                                                </div>
+                                                            </form>
+                                                            {% else %}
+                                                            <div class="alert alert-warning mb-0">Form not available for this mitigation.</div>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    {% endwith %}
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        
+                                        <!-- Summary Footer -->
+                                        <div class="p-3 bg-light border-top">
+                                            <div class="row text-center">
+                                                <div class="col-md-3">
+                                                    <div class="small text-muted">Total Actions</div>
+                                                    <div class="fs-4 fw-bold">{{ total_mitigations }}</div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="small text-muted">Completed</div>
+                                                    <div class="fs-4 fw-bold text-success">{{ completed_mitigations }}</div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="small text-muted">In Progress</div>
+                                                    <div class="fs-4 fw-bold text-primary">{{ in_progress_mitigations }}</div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="small text-muted">Overdue</div>
+                                                    <div class="fs-4 fw-bold text-danger">{{ overdue_mitigations }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>No mitigation actions defined.</strong>
+                                    Mitigation actions help manage and reduce this risk. Add mitigation actions through the admin panel or risk management interface.
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap & Popper JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+    <!-- jsPDF and autoTable for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+</body>
+</html>

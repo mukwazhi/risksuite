@@ -1,0 +1,57 @@
+<!-- Risk Owner Sidebar Navigation (separate from main application sidenav) -->
+<div class="col-lg-2 d-none d-lg-block bg-light border-end p-3 sidebar-sticky">
+    <div class="mb-3">
+        <h6 class="text-uppercase text-muted fw-bold">My Workspace</h6>
+    </div>
+
+    <ul class="nav nav-pills flex-column mb-3">
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'risk_owner_dashboard' %}active{% endif %}" href="{% url 'risk_owner_dashboard' %}">
+                <i class="fas fa-user-shield me-2"></i> My Dashboard
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'risk_owner_matrix' %}active{% endif %}" href="{% url 'risk_owner_matrix' %}">
+                <i class="fas fa-chart-pie me-2"></i> My Matrix
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'risk_owner_detailed' %}active{% endif %}" href="#">
+                <i class="fas fa-list me-2"></i> My Risks
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="fas fa-tasks me-2"></i> My Actions
+            </a>
+        </li>
+        <li class="nav-item mt-2">
+            <small class="text-muted text-uppercase fw-bold ps-2">Quick Links</small>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'notification_center' %}">
+                <i class="bi bi-bell-fill me-2"></i> Notifications
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'notification_preferences' %}">
+                <i class="bi bi-gear-fill me-2"></i> Preferences
+            </a>
+        </li>
+    </ul>
+
+    <div class="mt-4 pt-3 border-top small text-muted">
+        <div class="d-flex justify-content-between">
+            <span>Owned Risks</span>
+            <span class="fw-bold">{{ owned_risks_count|default:0 }}</span>
+        </div>
+        <div class="d-flex justify-content-between">
+            <span>Pending Actions</span>
+            <span class="fw-bold">{{ mitigations_count|default:0 }}</span>
+        </div>
+        <div class="d-flex justify-content-between">
+            <span>Upcoming Reviews</span>
+            <span class="fw-bold">{{ upcoming_assessments_count|default:0 }}</span>
+        </div>
+    </div>
+</div>

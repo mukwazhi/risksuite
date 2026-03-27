@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+{% block title %}{% if is_edit %}Edit Risk - Stage 1{% else %}Create Risk - Stage 1{% endif %} - RiskMate ERP{% endblock %}
+{% block extra_styles %}
+<style>
+    .form-label { font-size: 0.9rem; margin-bottom: 0.5rem; font-weight: 600; }
+    .card { border-radius: 0.5rem; border: 0; }
+    .section-header { background: #f8f9fa; padding: 10px 15px; border-radius: 5px; margin-bottom: 15px; border-left: 4px solid #0d6efd; }
+    .section-header h5 { margin: 0; color: #0d6efd; }
+    .progress-stepper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; position: relative; }
+    .progress-stepper::before { content: ''; position: absolute; top: 20px; left: 0; right: 0; height: 2px; background: #dee2e6; z-index: 0; }
+    .progress-step { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; flex: 1; }
+    .progress-step-circle { width: 40px; height: 40px; border-radius: 50%; background: white; border: 3px solid #dee2e6; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; margin-bottom: 8px; }
+    .progress-step.active .progress-step-circle { border-color: #0d6efd; background: #0d6efd; color: white; }
+    .progress-step.completed .progress-step-circle { border-color: #198754; background: #198754; color: white; }
+    .progress-step-label { font-size: 0.85rem; font-weight: 600; color: #6c757d; text-align: center; }
+    .progress-step.active .progress-step-label { color: #0d6efd; }
+    .progress-step.completed .progress-step-label { color: #198754; }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
+        <div>
+            {% if is_edit %}
+            <h4 class="mb-1"><i class="fas fa-edit me-2 text-primary"></i>Edit Risk: {{ risk.title }}</h4>
+            {% else %}
+            <h4 class="mb-1"><i class="fas fa-plus-circle me-2 text-primary"></i>Create New Risk</h4>
+            {% endif %}
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'all_risks' %}">Risk Register</a></li>
+                    {% if is_edit %}
+                    <li class="breadcrumb-item active">Edit Risk - Stage 1</li>
+                    {% else %}
+                    <li class="breadcrumb-item active">New Risk - Stage 1</li>
+                    {% endif %}
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Progress Stepper -->
+    <div class="progress-stepper">
+        <div class="progress-step active">
+            <div class="progress-step-circle">1</div>
+            <div class="progress-step-label">Basic Information</div>
+        </div>
+        <div class="progress-step">
+            <div class="progress-step-circle">2</div>
+            <div class="progress-step-label">Risk Assessment & Controls</div>
+        </div>
+        <div class="progress-step">
+            <div class="progress-step-circle">3</div>
+            <div class="progress-step-label">Residual Risk Rating</div>
+        </div>
+        <div class="progress-step">
+            <div class="progress-step-circle">4</div>
+            <div class="progress-step-label">Add Risk Indicators</div>
+        </div>
+    </div>
+
+    {% if risk_form.non_field_errors %}
+    <div class="alert alert-danger">
+        {{ risk_form.non_field_errors }}
+    </div>
+    {% endif %}
+    
+    <!-- Stage Info -->
+    <div class="alert alert-info">
+        <h6 class="alert-heading mb-2"><i class="fas fa-info-circle me-2"></i>Stage 1 of 4: Basic Risk Information</h6>
+        <p class="mb-0">Provide the core details about the risk. In the next stages, you'll assess the inherent risk level, define controls, view residual risk, and add indicators.</p>
+    </div>
+
+    <form method="post" novalidate id="riskForm">
+        {% csrf_token %}
+
+        <!-- Risk Basic Information -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">
+                    <i class="fas fa-info-circle text-primary me-2"></i> Risk Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ risk_form.department.id_for_label }}">Department <span class="text-danger">*</span></label>
+                        {{ risk_form.department }}
+                        {% if risk_form.department.errors %}<div class="text-danger small">{{ risk_form.department.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ risk_form.category.id_for_label }}">Category <span class="text-danger">*</span></label>
+                        {{ risk_form.category }}
+                        {% if risk_form.category.errors %}<div class="text-danger small">{{ risk_form.category.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label" for="{{ risk_form.title.id_for_label }}">Risk Title <span class="text-danger">*</span></label>
+                        {{ risk_form.title }}
+                        {% if risk_form.title.errors %}<div class="text-danger small">{{ risk_form.title.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label" for="{{ risk_form.description.id_for_label }}">Description <span class="text-danger">*</span></label>
+                        {{ risk_form.description }}
+                        {% if risk_form.description.errors %}<div class="text-danger small">{{ risk_form.description.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ risk_form.cause.id_for_label }}">Cause</label>
+                        {{ risk_form.cause }}
+                        {% if risk_form.cause.errors %}<div class="text-danger small">{{ risk_form.cause.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ risk_form.impact_description.id_for_label }}">Impact Description</label>
+                        {{ risk_form.impact_description }}
+                        {% if risk_form.impact_description.errors %}<div class="text-danger small">{{ risk_form.impact_description.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ risk_form.risk_owner.id_for_label }}">Risk Owner</label>
+                        {{ risk_form.risk_owner }}
+                        {% if risk_form.risk_owner.errors %}<div class="text-danger small">{{ risk_form.risk_owner.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ risk_form.linked_kpi.id_for_label }}">{{ risk_form.linked_kpi.label }}</label>
+                        {{ risk_form.linked_kpi }}
+                        {% if risk_form.linked_kpi.errors %}<div class="text-danger small">{{ risk_form.linked_kpi.errors }}</div>{% endif %}
+                        <small class="form-text text-muted">{{ risk_form.linked_kpi.help_text }}</small>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="form-check">
+                            {{ risk_form.park_risk }}
+                            <label class="form-check-label" for="{{ risk_form.park_risk.id_for_label }}">
+                                {{ risk_form.park_risk.label }}
+                            </label>
+                            {% if risk_form.park_risk.help_text %}
+                            <small class="form-text text-muted d-block">{{ risk_form.park_risk.help_text }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Category Impacts -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-start">
+                <div>
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-layer-group text-primary me-2"></i> Additional Category Impacts
+                    </h5>
+                    <small class="text-muted">Specify if this risk affects other categories with different impacts</small>
+                </div>
+                <div>
+                    <button type="button" id="add-category-impact" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-plus me-1"></i>Add Category
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                {{ category_formset.management_form }}
+                <div id="category-impacts-container">
+                    {% for form in category_formset %}
+                    <div class="category-impact-form border rounded p-3 mb-3 position-relative bg-light">
+                        {{ form.id }}
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger py-2 small">{{ form.non_field_errors }}</div>
+                        {% endif %}
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold">Category</label>
+                                {{ form.category }}
+                                {% if form.category.errors %}<div class="text-danger small">{{ form.category.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-semibold">Impact (1-5)</label>
+                                {{ form.impact }}
+                                {% if form.impact.errors %}<div class="text-danger small">{{ form.impact.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-semibold">Likelihood (1-5)</label>
+                                {{ form.likelihood }}
+                                {% if form.likelihood.errors %}<div class="text-danger small">{{ form.likelihood.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Impact Notes</label>
+                                {{ form.notes }}
+                                {% if form.notes.errors %}<div class="text-danger small">{{ form.notes.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-1 d-flex align-items-center justify-content-center">
+                                <div class="form-check">
+                                    {{ form.DELETE }}
+                                    <label for="{{ form.DELETE.id_for_label }}" class="form-check-label small text-danger">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </label>
+                                </div>
+                                <!-- Empty form template for JS cloning -->
+                                <div id="empty-category-form" class="d-none">
+                                    {% with form=category_formset.empty_form %}
+                                    <div class="category-impact-form border rounded p-3 mb-3 position-relative bg-light">
+                                        {{ form.id }}
+                                        <div class="row g-3">
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-semibold">Category</label>
+                                                {{ form.category }}
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label class="form-label small fw-semibold">Impact (1-5)</label>
+                                                {{ form.impact }}
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label class="form-label small fw-semibold">Likelihood (1-5)</label>
+                                                {{ form.likelihood }}
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label small fw-semibold">Impact Notes</label>
+                                                {{ form.notes }}
+                                            </div>
+                                            <div class="col-md-1 d-flex align-items-center justify-content-center">
+                                                <div class="form-check">
+                                                    {{ form.DELETE }}
+                                                    <label class="form-check-label small text-danger">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endwith %}
+                                </div>
+                            </div>
+                        </div>
+
+                    <script>
+                    (function(){
+                        // Find the TOTAL_FORMS input for the category formset
+                        const totalFormsInput = document.querySelector('input[name$="-TOTAL_FORMS"]');
+                        const addBtn = document.getElementById('add-category-impact');
+                        const container = document.getElementById('category-impacts-container');
+                        const emptyTpl = document.getElementById('empty-category-form');
+                        if (!totalFormsInput || !addBtn || !container || !emptyTpl) return;
+
+                        addBtn.addEventListener('click', function(){
+                            let total = parseInt(totalFormsInput.value, 10);
+                            // Find prefix from management form name, e.g., 'form-'
+                            const namePrefixMatch = totalFormsInput.name.match(/^(.*)-TOTAL_FORMS$/);
+                            const prefix = namePrefixMatch ? namePrefixMatch[1] : 'form';
+
+                            let html = emptyTpl.innerHTML.replace(/__prefix__/g, total);
+                            // Create wrapper and append
+                            const wrapper = document.createElement('div');
+                            wrapper.innerHTML = html;
+                            container.appendChild(wrapper);
+
+                            totalFormsInput.value = total + 1;
+                        });
+                    })();
+                    </script>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if not category_formset.forms %}
+                <p class="text-muted text-center mb-0">No additional category impacts defined. This is optional.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="d-flex justify-content-between mb-5">
+            <a href="{% url 'all_risks' %}" class="btn btn-secondary">
+                <i class="fas fa-times me-2"></i>Cancel
+            </a>
+            <button type="submit" class="btn btn-primary btn-lg">
+                Continue to Stage 2 <i class="fas fa-arrow-right ms-2"></i>
+            </button>
+        </div>
+    </form>
+{% endblock %}

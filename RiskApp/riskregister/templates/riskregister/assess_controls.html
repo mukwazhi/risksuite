@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-3">
+  <h3>{{ form_title }}</h3>
+  
+  <div class="row">
+    <div class="col-12">
+      <!-- Risk Context Box -->
+      <div class="alert alert-info">
+        <h6 class="mb-2"><i class="fas fa-info-circle me-2"></i>Risk Context</h6>
+        <div class="row">
+          <div class="col-md-8">
+            <strong>{{ risk.risk_id }}: {{ risk.title }}</strong>
+            <p class="mb-0 mt-1 text-muted small">{{ risk.description|truncatewords:30 }}</p>
+          </div>
+          <div class="col-md-4">
+            <div class="text-center">
+              <div class="fs-3 fw-bold text-primary">{{ risk.risk_rating }}</div>
+              <div class="small text-muted">Current Risk Score</div>
+              <small class="text-muted">({{ risk.likelihood }} × {{ risk.impact }})</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+          <h5 class="mb-0 fw-bold">
+            <i class="fas fa-shield-alt text-success me-2"></i> Assess Control Effectiveness
+          </h5>
+          <p class="text-muted small mb-0 mt-2">Rate the effectiveness of each control from 0% (not effective) to 100% (fully effective)</p>
+        </div>
+        <div class="card-body">
+          {% if controls %}
+          <form method="post">
+            {% csrf_token %}
+            
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width: 5%">#</th>
+                    <th style="width: 30%">Control Name</th>
+                    <th style="width: 20%">Type</th>
+                    <th style="width: 25%">Description</th>
+                    <th style="width: 20%" class="text-center">Effectiveness (%)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for control in controls %}
+                  <tr>
+                    <td class="text-muted">{{ forloop.counter }}</td>
+                    <td>
+                      <strong>{{ control.name }}</strong>
+                      {% if control.control_owner %}
+                      <br><small class="text-muted"><i class="fas fa-user me-1"></i>{{ control.control_owner.name }}</small>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <span class="badge bg-light text-dark border">
+                        {{ control.get_control_type_display|truncatewords:2 }}
+                      </span>
+                    </td>
+                    <td class="small text-muted">{{ control.description|truncatewords:15|default:"—" }}</td>
+                    <td>
+                      <div class="input-group input-group-sm">
+                        <input 
+                          type="number" 
+                          class="form-control text-center" 
+                          name="control_effectiveness_{{ control.pk }}"
+                          value="{{ control.effectiveness|default:0 }}"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          required
+                          style="font-weight: 600;"
+                        >
+                        <span class="input-group-text">%</span>
+                      </div>
+                      <div class="progress mt-2" style="height: 6px;">
+                        <div 
+                          class="progress-bar {% if control.effectiveness >= 75 %}bg-success{% elif control.effectiveness >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                          role="progressbar" 
+                          style="width: {{ control.effectiveness|default:0 }}%"
+                        ></div>
+                      </div>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+              <a href="{% url 'risk_detail' risk_id=risk.risk_id %}" class="btn btn-outline-secondary">
+                <i class="fas fa-times me-1"></i> Cancel
+              </a>
+              <button type="submit" class="btn btn-success">
+                <i class="fas fa-check me-1"></i> Save and Continue to Risk Assessment
+              </button>
+            </div>
+          </form>
+          {% else %}
+          <div class="text-center py-5">
+            <i class="fas fa-shield-alt fa-4x text-muted mb-3 opacity-50"></i>
+            <h5 class="text-muted">No Controls Defined</h5>
+            <p class="text-muted mb-4">This risk has no active controls to assess. You can skip to the overall risk assessment.</p>
+            <a href="{% url 'add_assessment' risk_id=risk.risk_id %}" class="btn btn-primary">
+              <i class="fas fa-arrow-right me-2"></i> Proceed to Risk Assessment
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Update progress bars when effectiveness values change
+document.querySelectorAll('input[name^="control_effectiveness_"]').forEach(input => {
+  input.addEventListener('input', function() {
+    const value = parseFloat(this.value) || 0;
+    const progressBar = this.closest('td').querySelector('.progress-bar');
+    progressBar.style.width = value + '%';
+    
+    // Update color based on value
+    progressBar.classList.remove('bg-success', 'bg-warning', 'bg-danger');
+    if (value >= 75) {
+      progressBar.classList.add('bg-success');
+    } else if (value >= 50) {
+      progressBar.classList.add('bg-warning');
+    } else {
+      progressBar.classList.add('bg-danger');
+    }
+  });
+});
+</script>
+{% endblock %}

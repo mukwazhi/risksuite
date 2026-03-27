@@ -1,0 +1,113 @@
+<!-- Sidebar Navigation -->
+<div class="col-lg-2 d-none d-lg-block bg-light border-end p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="text-uppercase text-muted fw-bold">Navigation</h6>
+    </div>
+    <ul class="nav nav-pills flex-column">
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+                <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'create_risk' %}active{% endif %}" href="{% url 'create_risk' %}">
+                <i class="fas fa-plus-circle me-2"></i> New Risk
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'all_risks' %}active{% endif %}" href="{% url 'all_risks' %}">
+                <i class="fas fa-list me-2"></i> All Risks
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'actions_dashboard' %}active{% endif %}" href="{% url 'actions_dashboard' %}">
+                <i class="fas fa-tasks me-2"></i> Actions
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'tasks' %}active{% endif %}" href="{% url 'tasks' %}">
+                <i class="fas fa-clipboard-check me-2"></i> Tasks
+            </a>
+        </li>
+        {% if user.is_authenticated and user.risk_owner_profile %}
+            <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'risk_owner_dashboard' %}active{% endif %}" href="{% url 'risk_owner_dashboard' %}">
+                    <i class="fas fa-user-shield me-2"></i> My Dashboard
+                </a>
+            </li>
+        {% endif %}
+        <!-- My Activities link removed -->
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name in 'risk_matrix statistics global_dashboard' %}active{% endif %}" href="{% url 'risk_matrix' %}">
+                <i class="fas fa-chart-pie me-2"></i> Risk Matrix
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'statistics' %}active{% endif %}" href="{% url 'statistics' %}">
+                <i class="fas fa-chart-line me-2"></i> Statistics
+            </a>
+        </li>
+        <li class="nav-item">
+            <!-- Removed Mitigation Plans from base navigation -->
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'risk_report_options' %}">
+                <i class="fas fa-file-pdf me-2"></i> Reports
+            </a>
+        </li>
+        {% if user.is_superuser %}
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="fas fa-cog me-2"></i> Settings
+            </a>
+        </li>
+        {% endif %}
+        
+        <!-- Workflow Section -->
+        <li class="nav-item mt-3">
+            <small class="text-muted text-uppercase fw-bold ps-2">Workflow</small>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'parked_risks' %}active{% endif %}" href="{% url 'parked_risks' %}">
+                <i class="fas fa-parking me-2 text-secondary"></i> Parked
+                <span class="badge bg-secondary float-end">{{ parked_count|default:0 }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'pending_risks' %}active{% endif %}" href="{% url 'pending_risks' %}">
+                <i class="fas fa-clock me-2 text-warning"></i> Pending
+                <span class="badge bg-warning text-dark float-end">{{ pending_count|default:0 }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'approved_risks' %}active{% endif %}" href="{% url 'approved_risks' %}">
+                <i class="fas fa-check-circle me-2 text-success"></i> Approved
+                <span class="badge bg-success float-end">{{ approved_count|default:0 }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'rejected_risks' %}active{% endif %}" href="{% url 'rejected_risks' %}">
+                <i class="fas fa-times-circle me-2 text-danger"></i> Rejected
+                <span class="badge bg-danger float-end">{{ rejected_count|default:0 }}</span>
+            </a>
+        </li>
+    </ul>
+    
+    <div class="mt-4 pt-3 border-top">
+        <h6 class="text-uppercase text-muted fw-bold small">Quick Stats</h6>
+        <div class="mt-2">
+            <div class="d-flex justify-content-between small">
+                <span>Total Risks:</span>
+                <span class="fw-bold">{{ total_risks|default:0 }}</span>
+            </div>
+            <div class="d-flex justify-content-between small">
+                <span>High Priority:</span>
+                <span class="fw-bold text-danger">{{ high_count|default:0 }}</span>
+            </div>
+            <div class="d-flex justify-content-between small">
+                <span>Pending:</span>
+                <span class="fw-bold text-warning">{{ pending_count|default:0 }}</span>
+            </div>
+        </div>
+    </div>
+</div>

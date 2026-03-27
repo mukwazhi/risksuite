@@ -1,0 +1,90 @@
+{% extends 'riskregister/base.html' %}
+
+{% block content %}
+<div class="container py-3">
+  <h1>Mitigations History</h1>
+
+  <form method="get" class="row g-2 mb-3">
+    <div class="col-auto">
+      <select name="status" class="form-select">
+        <option value="">All statuses</option>
+        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+        <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In progress</option>
+        <option value="complete" {% if status_filter == 'complete' %}selected{% endif %}>Complete</option>
+        <option value="postponed" {% if status_filter == 'postponed' %}selected{% endif %}>Postponed</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <select name="owner" class="form-select">
+        <option value="">All owners</option>
+        {% for o in owners %}
+          <option value="{{ o.pk }}" {% if owner_filter and owner_filter == o.pk|stringformat:"s" %}selected{% endif %}>{{ o.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-auto">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="overdue" value="1" id="overdueCheck" {% if overdue_filter == '1' %}checked{% endif %}>
+        <label class="form-check-label" for="overdueCheck">Overdue only</label>
+      </div>
+    </div>
+    <div class="col-auto">
+      <button class="btn btn-primary">Filter</button>
+    </div>
+  </form>
+
+  <p><strong>Total mitigations:</strong> {{ total }}</p>
+
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Mitigation</th>
+        <th>Risk</th>
+        <th>Owner</th>
+        <th>Due</th>
+        <th>Completion</th>
+        <th>Logs</th>
+        <th>Last update</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in mitigations %}
+        <tr>
+          <td>{{ m.action|truncatechars:80 }}</td>
+          <td>{{ m.risk.risk_id }}</td>
+          <td>{% if m.responsible_person %}{{ m.responsible_person.name }}{% else %}&mdash;{% endif %}</td>
+          <td>{{ m.due_date|date:'Y-m-d' }}</td>
+          <td>{{ m.completion_percentage }}%</td>
+          <td>{{ m.logs_count }}</td>
+          <td>{% if m.last_update %}{{ m.last_update|timesince }} ago{% else %}&mdash;{% endif %}</td>
+          <td>
+            <a class="btn btn-sm btn-outline-primary me-1" href="{% url 'mitigation_progress_trail' m.pk %}">Trail</a>
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'mitigation_progress_trail' m.pk %}">History</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="8">No mitigations found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <nav aria-label="Page navigation">
+    <ul class="pagination">
+      {% if mitigations.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ mitigations.previous_page_number }}">Previous</a></li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+      {% endif %}
+
+      <li class="page-item disabled"><span class="page-link">Page {{ mitigations.number }} of {{ mitigations.paginator.num_pages }}</span></li>
+
+      {% if mitigations.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ mitigations.next_page_number }}">Next</a></li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Next</span></li>
+      {% endif %}
+    </ul>
+  </nav>
+</div>
+{% endblock %}

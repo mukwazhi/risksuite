@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>RiskMate AI - Auditor Workflow Tool</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-color: #f8f9fa;
+            --dark-color: #2c3e50;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), #1a2530);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .logo i {
+            color: var(--secondary-color);
+        }
+
+        .ai-badge {
+            background: linear-gradient(135deg, #ff8a00, #e52e71);
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+
+        nav ul li {
+            margin-left: 20px;
+        }
+
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        nav ul li a:hover, nav ul li a.active {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .sidebar {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            height: fit-content;
+        }
+
+        .sidebar h3 {
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .business-units {
+            list-style: none;
+        }
+
+        .business-units li {
+            margin-bottom: 10px;
+        }
+
+        .business-units a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            background-color: var(--light-color);
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--dark-color);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .business-units a:hover, .business-units a.active {
+            background-color: var(--secondary-color);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .content-area {
+            background-color: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .tab-container {
+            margin-bottom: 20px;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 25px;
+        }
+
+        .tab {
+            padding: 12px 25px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .tab.active {
+            border-bottom: 3px solid var(--secondary-color);
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-header h2 {
+            color: var(--primary-color);
+        }
+
+        .risk-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .risk-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            border-left: 4px solid var(--warning-color);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .risk-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+
+        .risk-card.high {
+            border-left-color: var(--accent-color);
+        }
+
+        .risk-card.medium {
+            border-left-color: var(--warning-color);
+        }
+
+        .risk-card.low {
+            border-left-color: var(--success-color);
+        }
+
+        .risk-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .risk-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--dark-color);
+        }
+
+        .risk-level {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .risk-level.high {
+            background-color: var(--accent-color);
+        }
+
+        .risk-level.medium {
+            background-color: var(--warning-color);
+        }
+
+        .risk-level.low {
+            background-color: var(--success-color);
+        }
+
+        .risk-description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .risk-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .finding-template {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .ai-assist-section {
+            background: linear-gradient(135deg, #f5f7fa, #e4e8f0);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        .ai-assist-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .ai-assist-header h3 {
+            color: var(--primary-color);
+        }
+
+        .ai-icon {
+            color: var(--secondary-color);
+            font-size: 1.2rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--dark-color);
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            transition: var(--transition);
+        }
+
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background-color: var(--accent-color);
+        }
+
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--secondary-color);
+            color: var(--secondary-color);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-ai {
+            background: linear-gradient(135deg, #ff8a00, #e52e71);
+            color: white;
+        }
+
+        .btn-ai:hover {
+            background: linear-gradient(135deg, #e52e71, #ff8a00);
+            transform: translateY(-2px);
+        }
+
+        .report-section {
+            margin-bottom: 30px;
+        }
+
+        .report-section h3 {
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .finding-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            background-color: #f9f9f9;
+            transition: var(--transition);
+        }
+
+        .finding-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+
+        .finding-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .finding-title {
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+
+        .finding-risk {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .finding-risk.high {
+            background-color: var(--accent-color);
+        }
+
+        .finding-risk.medium {
+            background-color: var(--warning-color);
+        }
+
+        .finding-risk.low {
+            background-color: var(--success-color);
+        }
+
+        .finding-content {
+            margin-bottom: 15px;
+        }
+
+        .finding-content div {
+            margin-bottom: 8px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #777;
+        }
+
+        .risk-detail-section {
+            margin-bottom: 20px;
+        }
+
+        .risk-detail-section h4 {
+            margin-bottom: 8px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .risk-detail-section p {
+            background-color: #f5f7fa;
+            padding: 12px;
+            border-radius: 5px;
+            border-left: 3px solid var(--secondary-color);
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            color: #666;
+            font-size: 0.9rem;
+            border-top: 1px solid #eee;
+        }
+
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .stat-card.high {
+            border-top: 4px solid var(--accent-color);
+        }
+
+        .stat-card.medium {
+            border-top: 4px solid var(--warning-color);
+        }
+
+        .stat-card.low {
+            border-top: 4px solid var(--success-color);
+        }
+
+        .stat-card.total {
+            border-top: 4px solid var(--secondary-color);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .ai-loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .ai-loading .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--secondary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            nav ul {
+                margin-top: 15px;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .risk-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>RiskMate AI</span>
+                    <span class="ai-badge">AI Powered</span>
+                </div>
+                <nav>
+                    <ul>
+                        <li><a href="#" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                        <li><a href="#"><i class="fas fa-project-diagram"></i> Audit Projects</a></li>
+                        <li><a href="#"><i class="fas fa-file-alt"></i> Templates</a></li>
+                        <li><a href="#"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                        <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="main-content">
+            <aside class="sidebar">
+                <h3><i class="fas fa-building"></i> Business Units</h3>
+                <ul class="business-units">
+                    <li><a data-unit="procurement" class="active"><i class="fas fa-shopping-cart"></i> Procurement Cycle</a></li>
+                    <li><a data-unit="finance"><i class="fas fa-chart-line"></i> Finance & Accounting</a></li>
+                    <li><a data-unit="hr"><i class="fas fa-users"></i> Human Resources</a></li>
+                    <li><a data-unit="it"><i class="fas fa-laptop-code"></i> IT & Cybersecurity</a></li>
+                    <li><a data-unit="operations"><i class="fas fa-cogs"></i> Operations</a></li>
+                    <li><a data-unit="sales"><i class="fas fa-shopping-bag"></i> Sales & Marketing</a></li>
+                    <li><a data-unit="compliance"><i class="fas fa-gavel"></i> Compliance & Legal</a></li>
+                </ul>
+            </aside>
+
+            <main class="content-area">
+                <div class="tab-container">
+                    <div class="tabs">
+                        <div class="tab active" data-tab="risks"><i class="fas fa-exclamation-triangle"></i> Risks Library</div>
+                        <div class="tab" data-tab="findings"><i class="fas fa-clipboard-list"></i> Findings Template</div>
+                        <div class="tab" data-tab="report"><i class="fas fa-file-contract"></i> Audit Report</div>
+                    </div>
+
+                    <div class="tab-content active" id="risks">
+                        <div class="section-header">
+                            <h2 id="risks-title">Procurement Cycle Risks</h2>
+                            <div class="action-buttons">
+                                <button class="btn btn-outline"><i class="fas fa-filter"></i> Filter</button>
+                                <button class="btn"><i class="fas fa-sync-alt"></i> Refresh</button>
+                            </div>
+                        </div>
+                        <p>Click on any risk to generate a draft audit finding.</p>
+
+                        <div class="stats-cards">
+                            <div class="stat-card total">
+                                <div class="stat-label">Total Risks</div>
+                                <div class="stat-value" id="total-risks">0</div>
+                            </div>
+                            <div class="stat-card high">
+                                <div class="stat-label">High Risks</div>
+                                <div class="stat-value" id="high-risks">0</div>
+                            </div>
+                            <div class="stat-card medium">
+                                <div class="stat-label">Medium Risks</div>
+                                <div class="stat-value" id="medium-risks">0</div>
+                            </div>
+                            <div class="stat-card low">
+                                <div class="stat-label">Low Risks</div>
+                                <div class="stat-value" id="low-risks">0</div>
+                            </div>
+                        </div>
+
+                        <div class="risk-grid" id="risks-list">
+                            <!-- Risk items will be rendered here -->
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="findings">
+                        <div class="section-header">
+                            <h2>Audit Finding Template</h2>
+                            <div class="action-buttons">
+                                <button class="btn"><i class="fas fa-save"></i> Save Draft</button>
+                            </div>
+                        </div>
+                        <p>Customize the finding template based on the selected risk or use AI to generate from observation.</p>
+
+                        <div class="ai-assist-section">
+                            <div class="ai-assist-header">
+                                <i class="fas fa-robot ai-icon"></i>
+                                <h3>AI Finding Generator</h3>
+                            </div>
+                            <p>Briefly describe your observation and let AI generate a complete audit finding.</p>
+                            <div class="form-group">
+                                <label for="observation-input">Observation Summary</label>
+                                <textarea id="observation-input" placeholder="E.g., Vendor selection process lacks formal documentation and approval workflow..." rows="3"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="ai-risk-level">Risk Level</label>
+                                <select id="ai-risk-level">
+                                    <option value="high">High</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="low">Low</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-ai" id="generate-finding">
+                                <i class="fas fa-magic"></i> Generate Finding with AI
+                            </button>
+                            <div class="ai-loading" id="ai-loading">
+                                <div class="spinner"></div>
+                                <p>AI is generating your audit finding...</p>
+                            </div>
+                        </div>
+
+                        <div class="finding-template">
+                            <div class="form-group">
+                                <label for="finding-title">Finding Title</label>
+                                <input type="text" id="finding-title" placeholder="Enter finding title">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="risk-level">Risk Level</label>
+                                <select id="risk-level">
+                                    <option value="high">High</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="low">Low</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="condition">Condition (What is the issue?)</label>
+                                <textarea id="condition" placeholder="Describe the current state or problem identified"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="criteria">Criteria (What should it be?)</label>
+                                <textarea id="criteria" placeholder="Describe the expected state or standard"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cause">Cause (Why did it happen?)</label>
+                                <textarea id="cause" placeholder="Explain the root cause of the issue"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="effect">Effect (What is the impact?)</label>
+                                <textarea id="effect" placeholder="Describe the consequences or potential impact"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="recommendation">Recommendation</label>
+                                <textarea id="recommendation" placeholder="Provide actionable recommendations to address the issue"></textarea>
+                            </div>
+
+                            <div class="action-buttons">
+                                <button class="btn" id="save-finding"><i class="fas fa-save"></i> Save Finding</button>
+                                <button class="btn btn-danger" id="clear-form"><i class="fas fa-trash"></i> Clear Form</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="report">
+                        <div class="section-header">
+                            <h2>Audit Report</h2>
+                            <div class="action-buttons">
+                                <button class="btn" id="generate-report"><i class="fas fa-file-export"></i> Generate Draft Report</button>
+                                <button class="btn" id="download-word"><i class="fas fa-download"></i> Download Word</button>
+                            </div>
+                        </div>
+                        <p>Review and manage findings for the final audit report.</p>
+
+                        <div class="stats-cards">
+                            <div class="stat-card total">
+                                <div class="stat-label">Total Findings</div>
+                                <div class="stat-value" id="total-findings">0</div>
+                            </div>
+                            <div class="stat-card high">
+                                <div class="stat-label">High Risk Findings</div>
+                                <div class="stat-value" id="high-findings">0</div>
+                            </div>
+                            <div class="stat-card medium">
+                                <div class="stat-label">Medium Risk Findings</div>
+                                <div class="stat-value" id="medium-findings">0</div>
+                            </div>
+                            <div class="stat-card low">
+                                <div class="stat-label">Low Risk Findings</div>
+                                <div class="stat-value" id="low-findings">0</div>
+                            </div>
+                        </div>
+
+                        <div class="report-section">
+                            <h3><i class="fas fa-exclamation-circle"></i> High Risk Findings</h3>
+                            <div id="high-risk-findings">
+                                <!-- High risk findings will be dynamically added here -->
+                            </div>
+                        </div>
+
+                        <div class="report-section">
+                            <h3><i class="fas fa-exclamation"></i> Medium Risk Findings</h3>
+                            <div id="medium-risk-findings">
+                                <!-- Medium risk findings will be dynamically added here -->
+                            </div>
+                        </div>
+
+                        <div class="report-section">
+                            <h3><i class="fas fa-info-circle"></i> Low Risk Findings</h3>
+                            <div id="low-risk-findings">
+                                <!-- Low risk findings will be dynamically added here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div class="modal" id="risk-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Risk Details</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div id="risk-modal-content">
+                <!-- Risk details will be dynamically added here -->
+            </div>
+            <div class="action-buttons" style="margin-top: 20px;">
+                <button class="btn" id="use-template"><i class="fas fa-clipboard-list"></i> Use This Template</button>
+                <button class="btn btn-danger" id="close-modal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>RiskMate AI &copy; 2025 | AI-Powered Audit Assistant</p>
+        </div>
+    </footer>
+
+    <script>
+        // Full risk dataset keyed by id; includes unit so we can render per business unit
+        const riskData = {
+            // Procurement
+            'vendor-selection': {
+                id: 'vendor-selection',
+                unit: 'procurement',
+                title: 'Inadequate Vendor Selection Process',
+                description: 'Risk of selecting vendors without proper due diligence, leading to poor quality goods/services or compliance issues.',
+                condition: 'The organization lacks a formal vendor selection process with defined criteria for evaluating potential suppliers.',
+                criteria: 'A formal vendor selection process should be established with clear evaluation criteria, including financial stability, quality standards, and compliance requirements.',
+                cause: 'Absence of standardized procedures and lack of training for procurement staff on vendor evaluation best practices.',
+                effect: 'Increased risk of supply chain disruptions, poor quality products/services, and potential compliance violations.',
+                recommendation: 'Develop and implement a formal vendor selection policy with clear evaluation criteria and required documentation for vendor assessments.',
+                level: 'high'
+            },
+            'contract-management': {
+                id: 'contract-management',
+                unit: 'procurement',
+                title: 'Poor Contract Management',
+                description: 'Risk of unfavorable contract terms, missing key clauses, or failure to monitor contract compliance.',
+                condition: 'Contracts are not consistently reviewed by legal counsel, and there is no centralized system for tracking contract expiration dates and key terms.',
+                criteria: 'All contracts should undergo legal review before execution, and a centralized contract management system should track key dates and obligations.',
+                cause: 'Lack of standardized contract review process and inadequate resources dedicated to contract management.',
+                effect: 'Potential financial losses from unfavorable terms, missed renewal opportunities, and non-compliance with contractual obligations.',
+                recommendation: 'Establish a contract management framework with standardized review procedures and implement a centralized tracking system.',
+                level: 'high'
+            },
+            'purchase-approvals': {
+                id: 'purchase-approvals',
+                unit: 'procurement',
+                title: 'Weak Purchase Approval Controls',
+                description: 'Risk of unauthorized purchases, exceeding budget limits, or purchases without proper justification.',
+                condition: 'Purchase approvals are often bypassed or approved by unauthorized personnel, with limited documentation of justification.',
+                criteria: 'All purchases above a defined threshold should require proper authorization with documented business justification.',
+                cause: 'Inadequate segregation of duties and lack of automated controls in the procurement system.',
+                effect: 'Potential for fraudulent purchases, budget overruns, and acquisition of unnecessary goods/services.',
+                recommendation: 'Implement segregation of duties, establish clear approval thresholds, and enhance system controls for purchase approvals.',
+                level: 'medium'
+            },
+            'receiving-process': {
+                id: 'receiving-process',
+                unit: 'procurement',
+                title: 'Ineffective Receiving Process',
+                description: 'Risk of accepting incorrect quantities, damaged goods, or not verifying against purchase orders.',
+                condition: 'Receiving procedures are inconsistently applied and receiving records are incomplete.',
+                criteria: 'Receiving staff should verify deliveries against purchase orders and inspect for damage or discrepancies.',
+                cause: 'Insufficient training and weak controls at the receiving point.',
+                effect: 'Financial loss and inventory discrepancies.',
+                recommendation: 'Standardize receiving procedures and implement periodic reconciliations.',
+                level: 'medium'
+            },
+
+            // Finance & Accounting
+            'financial-reporting': {
+                id: 'financial-reporting',
+                unit: 'finance',
+                title: 'Inaccurate Financial Reporting',
+                description: 'Risk of misstated financial statements due to poor reconciliations or manual error.',
+                condition: 'Reconciliations are not performed timely and adjustments are poorly documented.',
+                criteria: 'Timely reconciliations and supporting documentation for adjustments.',
+                cause: 'Staff shortages and lack of automated reconciliation tools.',
+                effect: 'Misleading financial information affecting decision-making.',
+                recommendation: 'Automate reconciliations and strengthen review controls.',
+                level: 'high'
+            },
+            'segregation-duties': {
+                id: 'segregation-duties',
+                unit: 'finance',
+                title: 'Inadequate Segregation of Duties',
+                description: 'Concentration of incompatible duties increases risk of fraud.',
+                condition: 'Same individuals have access to both transaction initiation and approval.',
+                criteria: 'Segregation of duties among staff to prevent conflicts.',
+                cause: 'Small team and lack of role-based access controls.',
+                effect: 'Increased potential for undetected fraudulent activity.',
+                recommendation: 'Implement role separation and periodic access reviews.',
+                level: 'high'
+            },
+
+            // Human Resources
+            'onboarding-controls': {
+                id: 'onboarding-controls',
+                unit: 'hr',
+                title: 'Weak Onboarding Controls',
+                description: 'Inadequate vetting of new hires and missing documentation.',
+                condition: 'Incomplete background checks and inconsistent documentation.',
+                criteria: 'Standardized onboarding with mandatory checks and documentation.',
+                cause: 'Rushed hiring processes and lack of HR resources.',
+                effect: 'Risk of hiring unsuitable or non-compliant staff.',
+                recommendation: 'Strengthen onboarding checklists and approvals.',
+                level: 'medium'
+            },
+
+            // IT & Cybersecurity
+            'patch-management': {
+                id: 'patch-management',
+                unit: 'it',
+                title: 'Poor Patch Management',
+                description: 'Delayed or inconsistent application of security patches.',
+                condition: 'Critical systems not patched in a timely manner.',
+                criteria: 'Patch management policy with timelines for critical updates.',
+                cause: 'Lack of automation and testing processes.',
+                effect: 'Increased vulnerability to cyber-attacks.',
+                recommendation: 'Automate patching and implement testing environments.',
+                level: 'high'
+            },
+            'access-management': {
+                id: 'access-management',
+                unit: 'it',
+                title: 'Weak Access Management',
+                description: 'Excessive privileges and unmanaged user accounts.',
+                condition: 'User access reviews not performed regularly.',
+                criteria: 'Periodic user access reviews and least-privilege principle.',
+                cause: 'Poor identity lifecycle processes.',
+                effect: 'Unauthorized access and data breaches.',
+                recommendation: 'Implement IAM solution and regular reviews.',
+                level: 'high'
+            },
+
+            // Operations
+            'capacity-planning': {
+                id: 'capacity-planning',
+                unit: 'operations',
+                title: 'Inadequate Capacity Planning',
+                description: 'Operations unable to meet demand due to poor planning.',
+                condition: 'No formal process for forecasting and capacity adjustments.',
+                criteria: 'Forecasting and capacity planning aligned to service levels.',
+                cause: 'Siloed data and lack of analytics.',
+                effect: 'Service disruptions and increased costs.',
+                recommendation: 'Adopt demand forecasting and scalable capacity plans.',
+                level: 'medium'
+            },
+
+            // Sales & Marketing
+            'pricing-controls': {
+                id: 'pricing-controls',
+                unit: 'sales',
+                title: 'Uncontrolled Pricing Changes',
+                description: 'Ad-hoc pricing changes without approvals impacting margins.',
+                condition: 'Discounts applied without documented approvals.',
+                criteria: 'Pricing changes require formal approval and documentation.',
+                cause: 'Decentralized pricing authority.',
+                effect: 'Revenue leakage and margin erosion.',
+                recommendation: 'Centralize pricing approval workflow.',
+                level: 'medium'
+            },
+
+            // Compliance & Legal
+            'regulatory-compliance': {
+                id: 'regulatory-compliance',
+                unit: 'compliance',
+                title: 'Regulatory Non-Compliance',
+                description: 'Failure to comply with applicable laws and regulations.',
+                condition: 'No comprehensive compliance register maintained.',
+                criteria: 'Maintain compliance register and periodic reviews.',
+                cause: 'Limited compliance resources and poor tracking.',
+                effect: 'Fines, legal exposure, reputational damage.',
+                recommendation: 'Implement compliance register and monitoring.',
+                level: 'high'
+            }
+        };
+
+        // Utility: list of units and display names
+        const units = {
+            procurement: 'Procurement Cycle',
+            finance: 'Finance & Accounting',
+            hr: 'Human Resources',
+            it: 'IT & Cybersecurity',
+            operations: 'Operations',
+            sales: 'Sales & Marketing',
+            compliance: 'Compliance & Legal'
+        };
+
+        // AI-generated finding templates based on observation keywords
+        const aiTemplates = {
+            procurement: {
+                keywords: ['vendor', 'selection', 'procurement', 'purchase', 'contract'],
+                templates: [
+                    {
+                        condition: 'The organization lacks a formal {keyword} process with defined criteria for evaluation and approval.',
+                        criteria: 'A formal {keyword} process should be established with clear evaluation criteria, documentation requirements, and approval workflows.',
+                        cause: 'Absence of standardized procedures and inadequate training for staff responsible for {keyword} activities.',
+                        effect: 'Increased risk of poor decision-making, compliance violations, and potential financial losses.',
+                        recommendation: 'Develop and implement a formal {keyword} policy with documented procedures, approval thresholds, and monitoring mechanisms.'
+                    },
+                    {
+                        condition: '{keyword} activities are performed inconsistently across departments with limited documentation.',
+                        criteria: '{keyword} activities should follow standardized procedures with complete documentation for audit trail purposes.',
+                        cause: 'Lack of centralized oversight and inconsistent application of existing policies.',
+                        effect: 'Potential compliance gaps, operational inefficiencies, and difficulty in tracking {keyword} performance.',
+                        recommendation: 'Establish centralized governance for {keyword} activities and implement regular compliance monitoring.'
+                    }
+                ]
+            },
+            finance: {
+                keywords: ['reconciliation', 'financial', 'reporting', 'approval', 'expense'],
+                templates: [
+                    {
+                        condition: '{keyword} processes lack proper controls and documentation, leading to potential errors.',
+                        criteria: '{keyword} activities should include appropriate segregation of duties, review controls, and complete documentation.',
+                        cause: 'Inadequate system controls and lack of formal procedures for {keyword} activities.',
+                        effect: 'Increased risk of financial misstatement, fraud, and regulatory non-compliance.',
+                        recommendation: 'Implement automated controls, formal procedures, and regular monitoring for {keyword} processes.'
+                    }
+                ]
+            },
+            hr: {
+                keywords: ['onboarding', 'employee', 'training', 'background', 'verification'],
+                templates: [
+                    {
+                        condition: 'The {keyword} process lacks standardization and completeness checks.',
+                        criteria: '{keyword} activities should follow a standardized checklist with verification steps and documentation requirements.',
+                        cause: 'Inconsistent application of procedures and lack of centralized oversight.',
+                        effect: 'Potential compliance risks, inconsistent employee experience, and possible regulatory violations.',
+                        recommendation: 'Develop a standardized {keyword} checklist with mandatory completion requirements and periodic audits.'
+                    }
+                ]
+            },
+            it: {
+                keywords: ['access', 'security', 'patch', 'system', 'user'],
+                templates: [
+                    {
+                        condition: '{keyword} management processes are inconsistent and lack proper documentation.',
+                        criteria: '{keyword} activities should follow industry best practices with proper documentation and approval workflows.',
+                        cause: 'Lack of formal policies and inadequate resources dedicated to {keyword} management.',
+                        effect: 'Increased security vulnerabilities, potential data breaches, and compliance risks.',
+                        recommendation: 'Implement formal {keyword} management policies with regular reviews and monitoring mechanisms.'
+                    }
+                ]
+            },
+            default: {
+                templates: [
+                    {
+                        condition: 'The process for {keyword} lacks formal documentation and consistent application.',
+                        criteria: 'A formal process should be established for {keyword} with clear procedures and documentation requirements.',
+                        cause: 'Absence of standardized procedures and inadequate training for personnel.',
+                        effect: 'Potential operational inefficiencies, compliance risks, and inconsistent outcomes.',
+                        recommendation: 'Develop and implement standardized procedures for {keyword} with appropriate controls and monitoring.'
+                    }
+                ]
+            }
+        };
+
+        // Render risks for a chosen unit
+        function renderRisksForUnit(unitKey) {
+            const risksList = document.getElementById('risks-list');
+            const title = document.getElementById('risks-title');
+            risksList.innerHTML = '';
+            title.textContent = units[unitKey] + ' Risks';
+
+            const risksForUnit = Object.values(riskData).filter(r => r.unit === unitKey);
+            if (risksForUnit.length === 0) {
+                risksList.innerHTML = '<p>No predefined risks for this unit.</p>';
+                return;
+            }
+
+            // Update risk statistics
+            updateRiskStats(risksForUnit);
+
+            risksForUnit.forEach(r => {
+                const div = document.createElement('div');
+                div.className = `risk-card ${r.level}`;
+                div.setAttribute('data-risk', r.id);
+                div.innerHTML = `
+                    <div class="risk-header">
+                        <div class="risk-title">${r.title}</div>
+                        <div class="risk-level ${r.level}">${r.level.toUpperCase()}</div>
+                    </div>
+                    <div class="risk-description">${r.description}</div>
+                    <div class="risk-actions">
+                        <button class="btn btn-outline view-risk-btn" data-risk="${r.id}">View Details</button>
+                    </div>
+                `;
+                risksList.appendChild(div);
+            });
+
+            // Attach click handlers to view buttons
+            document.querySelectorAll('.view-risk-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const riskId = btn.getAttribute('data-risk');
+                    showRiskModal(riskId);
+                });
+            });
+
+            // Also allow clicking the entire card
+            document.querySelectorAll('.risk-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const riskId = card.getAttribute('data-risk');
+                    showRiskModal(riskId);
+                });
+            });
+        }
+
+        // Update risk statistics
+        function updateRiskStats(risks) {
+            const total = risks.length;
+            const high = risks.filter(r => r.level === 'high').length;
+            const medium = risks.filter(r => r.level === 'medium').length;
+            const low = risks.filter(r => r.level === 'low').length;
+            
+            document.getElementById('total-risks').textContent = total;
+            document.getElementById('high-risks').textContent = high;
+            document.getElementById('medium-risks').textContent = medium;
+            document.getElementById('low-risks').textContent = low;
+        }
+
+        // Show modal populated from riskData
+        function showRiskModal(riskId) {
+            const r = riskData[riskId];
+            if (!r) return;
+            document.getElementById('risk-modal-content').innerHTML = `
+                <div class="risk-detail-section">
+                    <h4><i class="fas fa-heading"></i> Title</h4>
+                    <p>${r.title}</p>
+                </div>
+                <div class="risk-detail-section">
+                    <h4><i class="fas fa-align-left"></i> Description</h4>
+                    <p>${r.description}</p>
+                </div>
+                <div class="risk-detail-section">
+                    <h4><i class="fas fa-exclamation-circle"></i> Condition (Example)</h4>
+                    <p>${r.condition}</p>
+                </div>
+                <div class="risk-detail-section">
+                    <h4><i class="fas fa-check-circle"></i> Criteria (Example)</h4>
+                    <p>${r.criteria}</p>
+                </div>
+                <div class="risk-detail-section">
+                    <h4><i class="fas fa-search"></i> Cause (Example)</h4>
+                    <p>${r.cause}</p>
+                </div>
+                <div class="risk-detail-section">
+                    <h4><i class="fas fa-chart-line"></i> Effect (Example)</h4>
+                    <p>${r.effect}</p>
+                </div>
+                <div class="risk-detail-section">
+                    <h4><i class="fas fa-lightbulb"></i> Recommendation (Example)</h4>
+                    <p>${r.recommendation}</p>
+                </div>
+            `;
+            // store current risk id to use-template button
+            document.getElementById('use-template').dataset.risk = riskId;
+            document.getElementById('risk-modal').style.display = 'flex';
+        }
+
+        // Generate AI finding based on observation
+        function generateAIFinding(observation, unit, riskLevel) {
+            // Show loading indicator
+            document.getElementById('ai-loading').style.display = 'block';
+            
+            // Simulate API call delay
+            setTimeout(() => {
+                // Extract keywords from observation
+                const keywords = extractKeywords(observation);
+                const primaryKeyword = keywords.length > 0 ? keywords[0] : 'process';
+                
+                // Get appropriate template based on business unit
+                const unitTemplates = aiTemplates[unit] || aiTemplates.default;
+                const template = unitTemplates.templates[Math.floor(Math.random() * unitTemplates.templates.length)];
+                
+                // Apply keyword to template
+                const condition = template.condition.replace(/{keyword}/g, primaryKeyword);
+                const criteria = template.criteria.replace(/{keyword}/g, primaryKeyword);
+                const cause = template.cause.replace(/{keyword}/g, primaryKeyword);
+                const effect = template.effect.replace(/{keyword}/g, primaryKeyword);
+                const recommendation = template.recommendation.replace(/{keyword}/g, primaryKeyword);
+                
+                // Generate title based on observation
+                const title = generateFindingTitle(observation, primaryKeyword);
+                
+                // Populate form with AI-generated content
+                document.getElementById('finding-title').value = title;
+                document.getElementById('risk-level').value = riskLevel;
+                document.getElementById('condition').value = condition;
+                document.getElementById('criteria').value = criteria;
+                document.getElementById('cause').value = cause;
+                document.getElementById('effect').value = effect;
+                document.getElementById('recommendation').value = recommendation;
+                
+                // Hide loading indicator
+                document.getElementById('ai-loading').style.display = 'none';
+                
+                // Show success message
+                alert('AI has successfully generated a complete audit finding!');
+            }, 2000);
+        }
+        
+        // Extract keywords from observation text
+        function extractKeywords(text) {
+            const commonWords = ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can'];
+            const words = text.toLowerCase().split(/\W+/).filter(word => 
+                word.length > 3 && !commonWords.includes(word)
+            );
+            return words;
+        }
+        
+        // Generate finding title based on observation
+        function generateFindingTitle(observation, keyword) {
+            const prefixes = [
+                'Inadequate',
+                'Weak',
+                'Poor',
+                'Ineffective',
+                'Insufficient',
+                'Lack of',
+                'Non-compliant',
+                'Unauthorized'
+            ];
+            
+            const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+            const processes = [
+                'Controls',
+                'Process',
+                'Procedures',
+                'Management',
+                'Oversight',
+                'Documentation',
+                'Monitoring'
+            ];
+            
+            const process = processes[Math.floor(Math.random() * processes.length)];
+            
+            return `${prefix} ${keyword.charAt(0).toUpperCase() + keyword.slice(1)} ${process}`;
+        }
+
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+
+                tab.classList.add('active');
+                document.getElementById(tab.getAttribute('data-tab')).classList.add('active');
+            });
+        });
+
+        // Sidebar business unit switching
+        document.querySelectorAll('.business-units a').forEach(a => {
+            a.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.business-units a').forEach(x => x.classList.remove('active'));
+                a.classList.add('active');
+                const unitKey = a.dataset.unit;
+                renderRisksForUnit(unitKey);
+
+                // switch to Risks tab
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+                document.querySelector('.tab[data-tab="risks"]').classList.add('active');
+                document.getElementById('risks').classList.add('active');
+            });
+        });
+
+        // Use template from modal: populate finding form
+        document.getElementById('use-template').addEventListener('click', () => {
+            const riskId = document.getElementById('use-template').dataset.risk;
+            const r = riskData[riskId];
+            if (!r) return;
+
+            // Switch to findings tab
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            document.querySelector('[data-tab="findings"]').classList.add('active');
+            document.getElementById('findings').classList.add('active');
+
+            // Populate form with template data
+            document.getElementById('finding-title').value = r.title;
+            document.getElementById('risk-level').value = r.level || 'medium';
+            document.getElementById('condition').value = r.condition;
+            document.getElementById('criteria').value = r.criteria;
+            document.getElementById('cause').value = r.cause;
+            document.getElementById('effect').value = r.effect;
+            document.getElementById('recommendation').value = r.recommendation;
+
+            // Close modal
+            document.getElementById('risk-modal').style.display = 'none';
+        });
+
+        // AI Generate Finding button
+        document.getElementById('generate-finding').addEventListener('click', () => {
+            const observation = document.getElementById('observation-input').value.trim();
+            const riskLevel = document.getElementById('ai-risk-level').value;
+            const currentUnit = document.querySelector('.business-units a.active').dataset.unit;
+            
+            if (!observation) {
+                alert('Please enter an observation for the AI to generate a finding.');
+                return;
+            }
+            
+            generateAIFinding(observation, currentUnit, riskLevel);
+        });
+
+        // Modal close buttons
+        document.querySelectorAll('.close-modal, #close-modal').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('risk-modal').style.display = 'none';
+            });
+        });
+
+        // Save finding functionality (fixed object construction)
+        document.getElementById('save-finding').addEventListener('click', () => {
+            const title = document.getElementById('finding-title').value.trim();
+            const riskLevel = document.getElementById('risk-level').value;
+            const condition = document.getElementById('condition').value.trim();
+            const criteria = document.getElementById('criteria').value.trim();
+            const cause = document.getElementById('cause').value.trim();
+            const effect = document.getElementById('effect').value.trim();
+            const recommendation = document.getElementById('recommendation').value.trim();
+
+            if (!title) {
+                alert('Please enter a finding title');
+                return;
+            }
+
+            const finding = {
+                id: Date.now(),
+                title: title,
+                riskLevel: riskLevel,
+                condition: condition,
+                criteria: criteria,
+                cause: cause,
+                effect: effect,
+                recommendation: recommendation,
+                date: new Date().toLocaleDateString()
+            };
+
+            let findings = JSON.parse(localStorage.getItem('auditFindings') || '[]');
+            findings.push(finding);
+            localStorage.setItem('auditFindings', JSON.stringify(findings));
+
+            updateReportView();
+
+            // Switch to report tab
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            document.querySelector('[data-tab="report"]').classList.add('active');
+            document.getElementById('report').classList.add('active');
+
+            alert('Finding saved successfully!');
+        });
+
+        // Clear form
+        document.getElementById('clear-form').addEventListener('click', () => {
+            if (confirm('Are you sure you want to clear the form?')) {
+                document.getElementById('finding-title').value = '';
+                document.getElementById('risk-level').value = 'high';
+                document.getElementById('condition').value = '';
+                document.getElementById('criteria').value = '';
+                document.getElementById('cause').value = '';
+                document.getElementById('effect').value = '';
+                document.getElementById('recommendation').value = '';
+                document.getElementById('observation-input').value = '';
+            }
+        });
+
+        // Generate draft report: refresh view and show brief confirmation
+        document.getElementById('generate-report').addEventListener('click', () => {
+            updateReportView();
+            alert('Draft report generated and refreshed in the Report tab.');
+        });
+
+        // Download Word document (simple HTML -> .doc approach, widely supported by MS Word)
+        document.getElementById('download-word').addEventListener('click', () => {
+            const findings = JSON.parse(localStorage.getItem('auditFindings') || '[]');
+            if (!findings || findings.length === 0) {
+                alert('No findings to export.');
+                return;
+            }
+
+            // Build HTML report content
+            let htmlContent = `
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <title>Audit Report - Draft</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; color: #222; }
+                        h1 { color: #2c3e50; }
+                        h2 { color: #3498db; }
+                        .finding { border:1px solid #ddd; padding:10px; margin-bottom:10px; border-radius:4px; }
+                        .meta { font-size: 0.9em; color: #555; margin-bottom:8px; }
+                    </style>
+                </head>
+                <body>
+                    <h1>RiskMate AI - Draft Audit Report</h1>
+                    <p>Generated on: ${new Date().toLocaleString()}</p>
+            `;
+
+            const groups = {
+                high: findings.filter(f => f.riskLevel === 'high'),
+                medium: findings.filter(f => f.riskLevel === 'medium'),
+                low: findings.filter(f => f.riskLevel === 'low')
+            };
+
+            ['high','medium','low'].forEach(level => {
+                htmlContent += `<h2>${level.charAt(0).toUpperCase()+level.slice(1)} Risk Findings</h2>`;
+                if (groups[level].length === 0) {
+                    htmlContent += '<p>No findings in this category.</p>';
+                } else {
+                    groups[level].forEach(f => {
+                        htmlContent += `
+                            <div class="finding">
+                                <div class="meta">Finding ID: ${f.id} | Date: ${f.date} | Level: ${f.riskLevel.toUpperCase()}</div>
+                                <h3>${f.title}</h3>
+                                <p><strong>Condition:</strong> ${f.condition}</p>
+                                <p><strong>Criteria:</strong> ${f.criteria}</p>
+                                <p><strong>Cause:</strong> ${f.cause}</p>
+                                <p><strong>Effect:</strong> ${f.effect}</p>
+                                <p><strong>Recommendation:</strong> ${f.recommendation}</p>
+                            </div>
+                        `;
+                    });
+                }
+            });
+
+            htmlContent += `</body></html>`;
+
+            // Create blob and download as .doc (Word can open HTML files saved with .doc)
+            const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `AuditReport_Draft_${new Date().toISOString().slice(0,10)}.doc`;
+            document.body.appendChild(a);
+            a.click();
+            URL.revokeObjectURL(url);
+            a.remove();
+        });
+
+        // Update report view: populate sections and attach edit/delete handlers
+        function updateReportView() {
+            const findings = JSON.parse(localStorage.getItem('auditFindings') || '[]');
+
+            document.getElementById('high-risk-findings').innerHTML = '';
+            document.getElementById('medium-risk-findings').innerHTML = '';
+            document.getElementById('low-risk-findings').innerHTML = '';
+
+            const highRiskFindings = findings.filter(f => f.riskLevel === 'high');
+            const mediumRiskFindings = findings.filter(f => f.riskLevel === 'medium');
+            const lowRiskFindings = findings.filter(f => f.riskLevel === 'low');
+
+            // Update finding statistics
+            document.getElementById('total-findings').textContent = findings.length;
+            document.getElementById('high-findings').textContent = highRiskFindings.length;
+            document.getElementById('medium-findings').textContent = mediumRiskFindings.length;
+            document.getElementById('low-findings').textContent = lowRiskFindings.length;
+
+            if (highRiskFindings.length === 0) {
+                document.getElementById('high-risk-findings').innerHTML = '<p>No findings added yet.</p>';
+            } else {
+                highRiskFindings.forEach(f => {
+                    const el = createFindingElement(f);
+                    document.getElementById('high-risk-findings').appendChild(el);
+                });
+            }
+
+            if (mediumRiskFindings.length === 0) {
+                document.getElementById('medium-risk-findings').innerHTML = '<p>No findings added yet.</p>';
+            } else {
+                mediumRiskFindings.forEach(f => {
+                    const el = createFindingElement(f);
+                    document.getElementById('medium-risk-findings').appendChild(el);
+                });
+            }
+
+            if (lowRiskFindings.length === 0) {
+                document.getElementById('low-risk-findings').innerHTML = '<p>No findings added yet.</p>';
+            } else {
+                lowRiskFindings.forEach(f => {
+                    const el = createFindingElement(f);
+                    document.getElementById('low-risk-findings').appendChild(el);
+                });
+            }
+        }
+
+        // Create finding DOM element with working edit/delete
+        function createFindingElement(finding) {
+            const div = document.createElement('div');
+            div.className = 'finding-card';
+            div.innerHTML = `
+                <div class="finding-header">
+                    <div class="finding-title">${finding.title}</div>
+                    <div class="finding-risk ${finding.riskLevel}">${finding.riskLevel.toUpperCase()}</div>
+                </div>
+                <div class="finding-content">
+                    <div><strong>Condition:</strong> ${finding.condition}</div>
+                    <div><strong>Criteria:</strong> ${finding.criteria}</div>
+                    <div><strong>Cause:</strong> ${finding.cause}</div>
+                    <div><strong>Effect:</strong> ${finding.effect}</div>
+                    <div><strong>Recommendation:</strong> ${finding.recommendation}</div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn edit-finding" data-id="${finding.id}"><i class="fas fa-edit"></i> Edit</button>
+                    <button class="btn btn-danger delete-finding" data-id="${finding.id}"><i class="fas fa-trash"></i> Delete</button>
+                </div>
+            `;
+            div.querySelector('.edit-finding').addEventListener('click', () => editFinding(finding.id));
+            div.querySelector('.delete-finding').addEventListener('click', () => deleteFinding(finding.id));
+            return div;
+        }
+
+        // Edit finding: loads into form, removes original from storage (will re-save on Save)
+        function editFinding(id) {
+            const findings = JSON.parse(localStorage.getItem('auditFindings') || '[]');
+            const finding = findings.find(f => f.id === id);
+            if (!finding) return;
+
+            // Populate form
+            document.getElementById('finding-title').value = finding.title;
+            document.getElementById('risk-level').value = finding.riskLevel;
+            document.getElementById('condition').value = finding.condition;
+            document.getElementById('criteria').value = finding.criteria;
+            document.getElementById('cause').value = finding.cause;
+            document.getElementById('effect').value = finding.effect;
+            document.getElementById('recommendation').value = finding.recommendation;
+
+            // Remove from storage; saving will re-add
+            const updated = findings.filter(f => f.id !== id);
+            localStorage.setItem('auditFindings', JSON.stringify(updated));
+
+            // Switch to findings tab
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            document.querySelector('[data-tab="findings"]').classList.add('active');
+            document.getElementById('findings').classList.add('active');
+        }
+
+        // Delete finding
+        function deleteFinding(id) {
+            if (!confirm('Delete this finding?')) return;
+            const findings = JSON.parse(localStorage.getItem('auditFindings') || '[]');
+            const updated = findings.filter(f => f.id !== id);
+            localStorage.setItem('auditFindings', JSON.stringify(updated));
+            updateReportView();
+        }
+
+        // Initialize view on load: render default unit and report
+        document.addEventListener('DOMContentLoaded', () => {
+            renderRisksForUnit('procurement');
+            updateReportView();
+        });
+    </script>
+</body>
+</html>

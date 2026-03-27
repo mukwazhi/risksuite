@@ -1,0 +1,68 @@
+# Virtual environments
+.venv/
+env/
+ENV/
+venv/
+.env
+.env.*
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# IDEs and editors
+.vscode/
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Django / project files
+db.sqlite3
+*/db.sqlite3
+media/
+media/*
+staticfiles/
+static/
+local_settings.py
+*.log
+
+# Testing, coverage, caches
+.coverage
+htmlcov/
+.tox/
+.pytest_cache/
+pytest_cache/
+.cache/
+
+# Type checkers
+.mypy_cache/
+.dmypy.json
+.pyright/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Pipenv
+Pipfile.lock
+
+# Celery
+celerybeat-schedule
+
+# Misc
+*.pyc
+*.pyo
+*.pyd

@@ -1,0 +1,358 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Assessment Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">Assessment Dashboard</h2>
+                    <p class="text-muted mb-0">Comprehensive view of risk and indicator assessments</p>
+                </div>
+                <div>
+                    <span class="badge bg-primary fs-6">{{ today|date:"F d, Y" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-danger">
+                <div class="card-body text-center">
+                    <h3 class="text-danger mb-2">{{ overdue_schedules.count }}</h3>
+                    <p class="text-muted mb-0">Overdue Assessments</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-warning">
+                <div class="card-body text-center">
+                    <h3 class="text-warning mb-2">{{ upcoming_schedules.count }}</h3>
+                    <p class="text-muted mb-0">Due Next 30 Days</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-success">
+                <div class="card-body text-center">
+                    <h3 class="text-success mb-2">{{ completion_rate|floatformat:0 }}%</h3>
+                    <p class="text-muted mb-0">Monthly Completion Rate</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-info">
+                <div class="card-body text-center">
+                    <h3 class="text-info mb-2">{{ this_month_completed }}</h3>
+                    <p class="text-muted mb-0">Completed This Month</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Left Column -->
+        <div class="col-lg-8">
+            <!-- Overdue Assessments -->
+            {% if overdue_schedules %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Overdue Assessments</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Indicator</th>
+                                    <th>Risk</th>
+                                    <th>Due Date</th>
+                                    <th>Days Overdue</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for schedule in overdue_schedules %}
+                                <tr>
+                                    <td>{{ schedule.indicator.name }}</td>
+                                    <td>
+                                        <a href="{% url 'risk_detail' schedule.indicator.risk.risk_id %}">
+                                            {{ schedule.indicator.risk.risk_number }}
+                                        </a>
+                                    </td>
+                                    <td>{{ schedule.scheduled_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        <span class="badge bg-danger">
+                                            {% widthratio schedule.days_until_due 1 -1 %} days
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'record_indicator_assessment' schedule.id %}" 
+                                           class="btn btn-sm btn-primary">
+                                            <i class="bi bi-clipboard-check"></i> Record
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Upcoming Assessments -->
+            {% if upcoming_schedules %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-calendar-event me-2"></i>Upcoming Assessments (Next 30 Days)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Indicator</th>
+                                    <th>Risk</th>
+                                    <th>Due Date</th>
+                                    <th>Days Until Due</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for schedule in upcoming_schedules %}
+                                <tr>
+                                    <td>{{ schedule.indicator.name }}</td>
+                                    <td>
+                                        <a href="{% url 'risk_detail' schedule.indicator.risk.risk_id %}">
+                                            {{ schedule.indicator.risk.risk_number }}
+                                        </a>
+                                    </td>
+                                    <td>{{ schedule.scheduled_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% with days_until=schedule.scheduled_date|timeuntil %}
+                                            <span class="badge bg-info">{{ days_until }}</span>
+                                        {% endwith %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'record_indicator_assessment' schedule.id %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-clipboard-check"></i> Record
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Recent Indicator Assessments -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-graph-up-arrow me-2"></i>Recent Indicator Assessments</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Indicator</th>
+                                    <th>Value</th>
+                                    <th>Status</th>
+                                    <th>Measured By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for assessment in recent_assessments %}
+                                <tr>
+                                    <td>{{ assessment.assessment_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'indicator_assessment_history' assessment.indicator.id %}">
+                                            {{ assessment.indicator.name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ assessment.measured_value }} {{ assessment.indicator.unit }}</td>
+                                    <td>
+                                        {% if assessment.status == 'breached' %}
+                                        <span class="badge bg-danger">Breached</span>
+                                        {% elif assessment.status == 'caution' %}
+                                        <span class="badge bg-warning">Caution</span>
+                                        {% else %}
+                                        <span class="badge bg-success">On Target</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ assessment.assessed_by.get_full_name|default:assessment.assessed_by.username }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-muted text-center">No recent assessments</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Risk Assessments -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-shield-exclamation me-2"></i>Recent Risk Assessments</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Risk</th>
+                                    <th>Type</th>
+                                    <th>Rating</th>
+                                    <th>Assessed By</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ra in recent_risk_assessments %}
+                                <tr>
+                                    <td>{{ ra.assessment_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'risk_detail' ra.risk.risk_id %}">
+                                            {{ ra.risk.risk_number }}
+                                        </a>
+                                    </td>
+                                    <td>{{ ra.get_assessment_type_display }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ ra.get_rating_class }}">
+                                            {{ ra.rating }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if ra.assessor %}
+                                            {{ ra.assessor.get_full_name|default:ra.assessor.username }}
+                                        {% else %}
+                                            <span class="text-muted">Unknown</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'risk_assessment_detail' ra.id %}" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-muted text-center">No recent risk assessments</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Sidebar -->
+        <div class="col-lg-4">
+            <!-- Status Breakdown -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Status Breakdown (Last 90 Days)</h6>
+                </div>
+                <div class="card-body">
+                    {% for status in status_breakdown %}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            {% if status.status == 'breached' %}
+                            <span class="badge bg-danger">Breached</span>
+                            {% elif status.status == 'caution' %}
+                            <span class="badge bg-warning">Caution</span>
+                            {% else %}
+                            <span class="badge bg-success">On Target</span>
+                            {% endif %}
+                        </div>
+                        <div class="fw-bold">{{ status.count }}</div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted mb-0">No assessment data</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Traceability Matrix -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>Traceability Matrix</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Risk</th>
+                                    <th class="text-center">KRIs</th>
+                                    <th class="text-center">Recent</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for risk in risks_with_indicators %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'risk_detail' risk.risk_id %}">
+                                            {{ risk.risk_number }}
+                                        </a>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary">{{ risk.indicator_count }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary">{{ risk.recent_assessments_count }}</span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-muted text-center">No data</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <small class="text-muted">*Recent = last 30 days</small>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-lightning me-2"></i>Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-speedometer2 me-2"></i>Main Dashboard
+                        </a>
+                        <a href="{% url 'actions_dashboard' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-list-check me-2"></i>Actions Dashboard
+                        </a>
+                        <button class="btn btn-outline-success" onclick="location.reload()">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Refresh Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

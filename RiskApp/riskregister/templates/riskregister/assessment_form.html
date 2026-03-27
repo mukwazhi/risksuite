@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RiskMate ERP - {{ form_title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        :root {
+            --admin-font-size: 13px;
+        }
+
+        html, body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: var(--admin-font-size);
+            line-height: 1.4;
+            background-color: #f8f9fa;
+        }
+
+        .form-control, .form-select {
+            font-size: var(--admin-font-size);
+            padding: 6px 8px;
+            border-radius: 2px;
+        }
+
+        textarea.form-control {
+            min-height: 96px;
+            padding: 8px;
+        }
+
+        .btn {
+            font-size: var(--admin-font-size);
+            padding: 6px 10px;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .risk-score-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .risk-score-display .score {
+            font-size: 48px;
+            font-weight: bold;
+            color: #0d6efd;
+        }
+
+        .risk-score-display .label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary border-bottom">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="{% url 'dashboard' %}">
+                <i class="fas fa-shield-alt me-2"></i>
+                RiskMate ERP
+            </a>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-3">
+        <div class="row">
+            <div class="col-lg-2 d-none d-lg-block bg-light border-end p-3">
+                <ul class="nav nav-pills flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'dashboard' %}">
+                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'all_risks' %}">
+                            <i class="fas fa-list me-2"></i> All Risks
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'risk_detail' risk_id=risk.risk_id %}">
+                            <i class="fas fa-file-alt me-2"></i> Risk Detail
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="col-lg-10 px-4">
+                <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
+                    <div>
+                        <h2 class="mb-2">{{ form_title }}</h2>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                                <li class="breadcrumb-item"><a href="{% url 'all_risks' %}">Risk Register</a></li>
+                                <li class="breadcrumb-item"><a href="{% url 'risk_detail' risk_id=risk.risk_id %}">{{ risk.risk_id }}</a></li>
+                                <li class="breadcrumb-item active">{{ form_title }}</li>
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Risk Context Box -->
+                <div class="info-box">
+                    <h6 class="mb-2"><i class="fas fa-info-circle me-2"></i>Risk Context</h6>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <strong>{{ risk.risk_id }}: {{ risk.title }}</strong>
+                            <p class="mb-0 mt-1 text-muted small">{{ risk.description|truncatewords:30 }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="risk-score-display">
+                                <div class="score">{{ risk.risk_rating }}</div>
+                                <div class="label">Current Risk Score</div>
+                                <small class="text-muted">({{ risk.likelihood }} × {{ risk.impact }})</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if latest_assessment %}
+                <div class="alert alert-info">
+                    <i class="fas fa-history me-2"></i>
+                    <strong>Previous Assessment:</strong> {{ latest_assessment.assessment_date|date:"M d, Y" }} - 
+                    Likelihood: {{ latest_assessment.likelihood }}/5, Impact: {{ latest_assessment.impact }}/5, 
+                    Score: {{ latest_assessment.risk_score }}/25
+                </div>
+                {% endif %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white py-3">
+                            <h5 class="mb-0 fw-bold">
+                                <i class="fas fa-chart-line text-primary me-2"></i> Assessment Details
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold" for="{{ form.assessment_date.id_for_label }}">
+                                        {{ form.assessment_date.label }}
+                                    </label>
+                                    {{ form.assessment_date }}
+                                    {% if form.assessment_date.errors %}<div class="text-danger small">{{ form.assessment_date.errors }}</div>{% endif %}
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold" for="{{ form.assessment_type.id_for_label }}">
+                                        {{ form.assessment_type.label }}
+                                    </label>
+                                    {{ form.assessment_type }}
+                                    {% if form.assessment_type.errors %}<div class="text-danger small">{{ form.assessment_type.errors }}</div>{% endif %}
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold" for="{{ form.likelihood.id_for_label }}">
+                                        {{ form.likelihood.label }}
+                                    </label>
+                                    {{ form.likelihood }}
+                                    <small class="text-muted d-block">{{ form.likelihood.help_text }}</small>
+                                    {% if form.likelihood.errors %}<div class="text-danger small">{{ form.likelihood.errors }}</div>{% endif %}
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold" for="{{ form.impact.id_for_label }}">
+                                        {{ form.impact.label }}
+                                    </label>
+                                    {{ form.impact }}
+                                    <small class="text-muted d-block">{{ form.impact.help_text }}</small>
+                                    {% if form.impact.errors %}<div class="text-danger small">{{ form.impact.errors }}</div>{% endif %}
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label fw-bold" for="{{ form.rationale.id_for_label }}">
+                                        {{ form.rationale.label }}
+                                    </label>
+                                    {{ form.rationale }}
+                                    {% if form.rationale.errors %}<div class="text-danger small">{{ form.rationale.errors }}</div>{% endif %}
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label fw-bold" for="{{ form.changes_since_last.id_for_label }}">
+                                        {{ form.changes_since_last.label }}
+                                    </label>
+                                    {{ form.changes_since_last }}
+                                    {% if form.changes_since_last.errors %}<div class="text-danger small">{{ form.changes_since_last.errors }}</div>{% endif %}
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label fw-bold" for="{{ form.evidence.id_for_label }}">
+                                        {{ form.evidence.label }}
+                                    </label>
+                                    {{ form.evidence }}
+                                    {% if form.evidence.errors %}<div class="text-danger small">{{ form.evidence.errors }}</div>{% endif %}
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label fw-bold" for="{{ form.recommendations.id_for_label }}">
+                                        {{ form.recommendations.label }}
+                                    </label>
+                                    {{ form.recommendations }}
+                                    {% if form.recommendations.errors %}<div class="text-danger small">{{ form.recommendations.errors }}</div>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mb-4">
+                        <a href="{% url 'risk_detail' risk_id=risk.risk_id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Save Assessment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+</body>
+</html>

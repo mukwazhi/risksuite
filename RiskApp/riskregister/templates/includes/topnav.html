@@ -1,0 +1,102 @@
+<!-- Top Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary border-bottom">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold d-flex align-items-center" href="{% url 'dashboard' %}">
+            <i class="fas fa-shield-alt me-2"></i>
+            RiskSuite
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+                        <i class="fas fa-home me-1"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'actions_dashboard' %}active{% endif %}" href="{% url 'actions_dashboard' %}">
+                        <i class="fas fa-tasks me-1"></i> Actions
+                    </a>
+                </li>
+                    <li class="nav-item">
+                    </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-project-diagram me-1"></i> Workflow
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{% url 'parked_risks' %}">
+                            <i class="fas fa-parking me-2 text-secondary"></i> Parked/Draft Risks
+                            <span class="badge bg-secondary ms-2">{{ parked_count|default:0 }}</span>
+                        </a></li>
+                        <li><a class="dropdown-item" href="{% url 'pending_risks' %}">
+                            <i class="fas fa-clock me-2 text-warning"></i> Pending Approval
+                            <span class="badge bg-warning text-dark ms-2">{{ pending_count|default:0 }}</span>
+                        </a></li>
+                        <li><a class="dropdown-item" href="{% url 'approved_risks' %}">
+                            <i class="fas fa-check-circle me-2 text-success"></i> Approved Risks
+                            <span class="badge bg-success ms-2">{{ approved_count|default:0 }}</span>
+                        </a></li>
+                        <li><a class="dropdown-item" href="{% url 'rejected_risks' %}">
+                            <i class="fas fa-times-circle me-2 text-danger"></i> Rejected Risks
+                            <span class="badge bg-danger ms-2">{{ rejected_count|default:0 }}</span>
+                        </a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'all_risks' %}active{% endif %}" href="{% url 'all_risks' %}">
+                        <i class="fas fa-list-alt me-1"></i> Risk Register
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'notification_preferences' %}active{% endif %}" href="{% url 'notification_preferences' %}">
+                        <i class="fas fa-bell me-1"></i> Notifications
+                    </a>
+                </li>
+                {% if user.is_superuser %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-cog me-1"></i> Administration
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-users me-2"></i> User Management</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-building me-2"></i> Departments</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-tags me-2"></i> Risk Categories</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-database me-2"></i> System Settings</a></li>
+                    </ul>
+                </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'risk_report_options' %}">
+                        <i class="fas fa-chart-bar me-1"></i> Reports
+                    </a>
+                </li>
+            </ul>
+            <div class="d-flex align-items-center">
+                
+                <div class="dropdown">
+                    <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-circle me-2 fs-5"></i>
+                        <span class="d-none d-sm-inline">{{ user.get_full_name|default:user.username }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li class="px-3 py-2 text-muted small">
+                            <div class="fw-bold">{{ user.email|default:user.username }}</div>
+                            <div class="small">{% if user.is_superuser %}Administrator{% else %}Staff User{% endif %}</div>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <!-- Notifications link -->
+                        <li><a class="dropdown-item" href="{% url 'notification_preferences' %}"><i class="fas fa-bell me-2"></i> Notifications</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Profile</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i> Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i> Sign Out</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>

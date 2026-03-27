@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>RiskPad - Risk Management Platform</title>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+      body {
+        background-color: #f8f9fa;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      main {
+        flex: 1;
+      }
+      
+      .bg-dodger {
+        background-color: #0d6efd !important;
+      }
+      
+      .feature-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border-radius: 10px;
+        border: none;
+      }
+      
+      .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      }
+      
+      .welcome-section {
+        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+        border-radius: 15px;
+        color: white;
+      }
+      
+      .quick-stats {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      }
+      
+      .navbar-brand {
+        font-size: 1.5rem;
+      }
+      
+      .card {
+        border-radius: 0.5rem;
+      }
+      
+      .btn {
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+      }
+      
+      .recent-activity-item {
+        border-left: 3px solid transparent;
+        transition: all 0.3s ease;
+      }
+      
+      .recent-activity-item:hover {
+        border-left-color: #0d6efd;
+        background-color: #f8f9fa;
+      }
+      
+      .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dodger border-bottom">
+      <div class="container-fluid">
+        <a class="navbar-brand fw-bold d-flex align-items-center" href="#">
+          <i class="fas fa-shield-alt me-2"></i>
+          RiskPad
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link active" aria-current="page" href="#">
+                <i class="fas fa-home me-1"></i> Dashboard
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">
+                <i class="fas fa-list-alt me-1"></i> Risk Register
+              </a>
+            </li>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                <i class="fas fa-cog me-1"></i> Administration
+              </a>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#">User Management</a></li>
+                <li><a class="dropdown-item" href="#">Departments</a></li>
+                <li><a class="dropdown-item" href="#">Risk Categories</a></li>
+              </ul>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">
+                <i class="fas fa-chart-bar me-1"></i> Reports
+              </a>
+            </li>
+          </ul>
+          <div class="d-flex align-items-center">
+            <div class="dropdown">
+              <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="fas fa-user-circle me-2 fs-5"></i>
+                <span class="d-none d-sm-inline">John Smith</span>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Profile</a></li>
+                <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i> Settings</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i> Sign Out</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container my-4">
+      <!-- Welcome Section -->
+      <div class="welcome-section p-4 mb-4">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h1 class="display-6 fw-bold">Welcome back, John Smith</h1>
+            <p class="lead mb-0">Here's what's happening with your risk management today.</p>
+          </div>
+          <div class="col-md-4 text-md-end">
+            <div class="quick-stats p-3 d-inline-block">
+              <div class="d-flex align-items-center">
+                <div class="me-3">
+                  <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                </div>
+                <div>
+                  <div class="fw-bold text-danger">7 High Priority</div>
+                  <small class="text-muted">Risks need attention</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+          <div class="card border-0 shadow-sm h-100 feature-card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <h6 class="card-title text-muted text-uppercase small">Total Risks</h6>
+                  <div class="stat-number text-primary">142</div>
+                  <span class="badge bg-success bg-opacity-10 text-success small">
+                    <i class="fas fa-arrow-up me-1"></i> 12% increase
+                  </span>
+                </div>
+                <div class="bg-primary bg-opacity-10 p-3 rounded">
+                  <i class="fas fa-shield-alt text-primary fs-5"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+          <div class="card border-0 shadow-sm h-100 feature-card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <h6 class="card-title text-muted text-uppercase small">Open Items</h6>
+                  <div class="stat-number text-warning">24</div>
+                  <span class="badge bg-warning bg-opacity-10 text-warning small">
+                    <i class="fas fa-clock me-1"></i> 5 overdue
+                  </span>
+                </div>
+                <div class="bg-warning bg-opacity-10 p-3 rounded">
+                  <i class="fas fa-tasks text-warning fs-5"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+          <div class="card border-0 shadow-sm h-100 feature-card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <h6 class="card-title text-muted text-uppercase small">Completion Rate</h6>
+                  <div class="stat-number text-success">76%</div>
+                  <span class="badge bg-success bg-opacity-10 text-success small">
+                    <i class="fas fa-check-circle me-1"></i> On track
+                  </span>
+                </div>
+                <div class="bg-success bg-opacity-10 p-3 rounded">
+                  <i class="fas fa-chart-line text-success fs-5"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+          <div class="card border-0 shadow-sm h-100 feature-card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <h6 class="card-title text-muted text-uppercase small">Team Activity</h6>
+                  <div class="stat-number text-info">89</div>
+                  <span class="badge bg-info bg-opacity-10 text-info small">
+                    <i class="fas fa-users me-1"></i> This week
+                  </span>
+                </div>
+                <div class="bg-info bg-opacity-10 p-3 rounded">
+                  <i class="fas fa-user-friends text-info fs-5"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <!-- Navigation Cards -->
+        <div class="col-lg-8">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+              <h5 class="mb-0 fw-bold">
+                <i class="fas fa-compass text-primary me-2"></i> Application Navigation
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="row g-3">
+                <!-- Card 1 -->
+                <div class="col-md-6 col-lg-4">
+                  <div class="card text-center h-100 feature-card">
+                    <div class="card-body p-3">
+                      <i class="fa-solid fa-bullseye fa-2x mb-2 text-primary"></i>
+                      <h6 class="card-title mb-2">Strategy & Objectives</h6>
+                      <p class="card-text small text-muted">Define and track strategic objectives.</p>
+                      <a href="#" class="btn btn-primary btn-sm w-100">View & Explore</a>
+                    </div>
+                  </div>
+                </div>
+                <!-- Card 2 -->
+                <div class="col-md-6 col-lg-4">
+                  <div class="card text-center h-100 feature-card">
+                    <div class="card-body p-3">
+                      <i class="fa-solid fa-clipboard-list fa-2x mb-2 text-primary"></i>
+                      <h6 class="card-title mb-2">RISK REGISTER</h6>
+                      <p class="card-text small text-muted">Manage and track organizational risks effectively.</p>
+                      <a href="#" class="btn btn-primary btn-sm w-100">View & Explore</a>
+                    </div>
+                  </div>
+                </div>
+                <!-- Card 3 -->
+                <div class="col-md-6 col-lg-4">
+                  <div class="card text-center h-100 feature-card">
+                    <div class="card-body p-3">
+                      <i class="fa-solid fa-person-walking-arrow-right fa-2x mb-2 text-primary"></i>
+                      <h6 class="card-title mb-2">Follow Up</h6>
+                      <p class="card-text small text-muted">Track progress of implementation of actions.</p>
+                      <a href="#" class="btn btn-primary btn-sm w-100">View & Explore</a>
+                    </div>
+                  </div>
+                </div>
+                <!-- Card 4 -->
+                <div class="col-md-6 col-lg-4">
+                  <div class="card text-center h-100 feature-card">
+                    <div class="card-body p-3">
+                      <i class="fa-solid fa-folder-closed fa-2x mb-2 text-primary"></i>
+                      <h6 class="card-title mb-2">Working Papers</h6>
+                      <p class="card-text small text-muted">Manage working papers & audit evidence effectively.</p>
+                      <a href="#" class="btn btn-primary btn-sm w-100">View & Explore</a>
+                    </div>
+                  </div>
+                </div>
+                <!-- Card 5 -->
+                <div class="col-md-6 col-lg-4">
+                  <div class="card text-center h-100 feature-card">
+                    <div class="card-body p-3">
+                      <i class="fa-solid fa-file-lines fa-2x mb-2 text-primary"></i>
+                      <h6 class="card-title mb-2">Reports</h6>
+                      <p class="card-text small text-muted">Download reports and insights for corporate reporting.</p>
+                      <a href="#" class="btn btn-primary btn-sm w-100">View & Explore</a>
+                    </div>
+                  </div>
+                </div>
+                <!-- Card 6 -->
+                <div class="col-md-6 col-lg-4">
+                  <div class="card text-center h-100 feature-card">
+                    <div class="card-body p-3">
+                      <i class="fa-solid fa-book fa-2x mb-2 text-primary"></i>
+                      <h6 class="card-title mb-2">Resources</h6>
+                      <p class="card-text small text-muted">A collection of enterprise risk resources.</p>
+                      <a href="#" class="btn btn-primary btn-sm w-100">View & Explore</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="col-lg-4">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3">
+              <h5 class="mb-0 fw-bold">
+                <i class="fas fa-clock text-primary me-2"></i> Recent Activity
+              </h5>
+            </div>
+            <div class="card-body p-0">
+              <div class="list-group list-group-flush">
+                <div class="list-group-item border-0 py-3 recent-activity-item">
+                  <div class="d-flex">
+                    <div class="flex-shrink-0">
+                      <i class="fas fa-plus-circle text-success"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                      <h6 class="mb-1 fw-semibold">New risk identified</h6>
+                      <p class="mb-1 small">Data security vulnerability in IT infrastructure</p>
+                      <small class="text-muted">2 hours ago • IT Department</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="list-group-item border-0 py-3 recent-activity-item">
+                  <div class="d-flex">
+                    <div class="flex-shrink-0">
+                      <i class="fas fa-edit text-warning"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                      <h6 class="mb-1 fw-semibold">Risk assessment updated</h6>
+                      <p class="mb-1 small">Supply chain disruption likelihood increased</p>
+                      <small class="text-muted">Yesterday • Operations</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="list-group-item border-0 py-3 recent-activity-item">
+                  <div class="d-flex">
+                    <div class="flex-shrink-0">
+                      <i class="fas fa-check-circle text-primary"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                      <h6 class="mb-1 fw-semibold">Mitigation plan completed</h6>
+                      <p class="mb-1 small">HR policy compliance risk successfully mitigated</p>
+                      <small class="text-muted">2 days ago • Human Resources</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="list-group-item border-0 py-3 recent-activity-item">
+                  <div class="d-flex">
+                    <div class="flex-shrink-0">
+                      <i class="fas fa-exclamation-triangle text-danger"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                      <h6 class="mb-1 fw-semibold">High priority risk escalated</h6>
+                      <p class="mb-1 small">Regulatory compliance deadline approaching</p>
+                      <small class="text-muted">3 days ago • Legal Department</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upcoming Deadlines -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+              <h5 class="mb-0 fw-bold">
+                <i class="fas fa-calendar-alt text-primary me-2"></i> Upcoming Deadlines
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <div class="d-flex align-items-center p-3 border rounded">
+                    <div class="flex-shrink-0 bg-danger bg-opacity-10 p-2 rounded me-3">
+                      <i class="fas fa-exclamation-circle text-danger"></i>
+                    </div>
+                    <div>
+                      <h6 class="mb-1 fw-semibold">Quarterly Risk Assessment</h6>
+                      <p class="mb-0 small text-muted">Due in <span class="fw-bold text-danger">5 days</span></p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="d-flex align-items-center p-3 border rounded">
+                    <div class="flex-shrink-0 bg-warning bg-opacity-10 p-2 rounded me-3">
+                      <i class="fas fa-clock text-warning"></i>
+                    </div>
+                    <div>
+                      <h6 class="mb-1 fw-semibold">Compliance Review</h6>
+                      <p class="mb-0 small text-muted">Due in <span class="fw-bold text-warning">2 weeks</span></p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="d-flex align-items-center p-3 border rounded">
+                    <div class="flex-shrink-0 bg-success bg-opacity-10 p-2 rounded me-3">
+                      <i class="fas fa-check-double text-success"></i>
+                    </div>
+                    <div>
+                      <h6 class="mb-1 fw-semibold">Annual Risk Report</h6>
+                      <p class="mb-0 small text-muted">Due in <span class="fw-bold text-success">1 month</span></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto py-3 bg-dodger">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-md-6 text-white">
+            <i class="fas fa-shield-alt me-2"></i> RiskPad - Risk Management Platform
+          </div>
+          <div class="col-md-6 text-md-end text-white">
+            © 2025 RiskPad | v1.0
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+      // Simple interactive elements for demonstration
+      document.addEventListener('DOMContentLoaded', function() {
+        // Add click effects to navigation cards
+        const navCards = document.querySelectorAll('.feature-card');
+        navCards.forEach(card => {
+          card.addEventListener('click', function() {
+            const btn = this.querySelector('.btn');
+            const originalText = btn.textContent;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Loading...';
+            
+            setTimeout(() => {
+              btn.textContent = originalText;
+              alert('Navigating to ' + this.querySelector('.card-title').textContent);
+            }, 1000);
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

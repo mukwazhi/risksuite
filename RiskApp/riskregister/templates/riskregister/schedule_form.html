@@ -1,0 +1,368 @@
+{% load math_extras %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ form_title }} - RiskPad</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        
+        .form-container {
+            max-width: 900px;
+            margin: 2rem auto;
+        }
+        
+        .card {
+            border: none;
+            box-shadow: 0 0 20px rgba(0,0,0,0.08);
+            border-radius: 8px;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px 8px 0 0 !important;
+            padding: 1.5rem;
+        }
+        
+        .info-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: 4px;
+        }
+        
+        .status-badge {
+            font-size: 0.875rem;
+            padding: 0.4rem 0.8rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-text {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+        
+        .measurement-section {
+            background-color: #e3f2fd;
+            border: 2px dashed #2196F3;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .status-overdue { background-color: #dc3545; color: white; }
+        .status-pending { background-color: #ffc107; color: #000; }
+        .status-completed { background-color: #28a745; color: white; }
+        .status-skipped { background-color: #6c757d; color: white; }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="{% url 'dashboard' %}">
+                <i class="fas fa-shield-alt me-2"></i>
+                RiskPad
+            </a>
+            <div class="d-flex">
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="form-container">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-calendar-check me-2"></i>
+                    {{ form_title }}
+                </h4>
+            </div>
+            
+            <div class="card-body p-4">
+                <!-- Schedule Information -->
+                <div class="info-box">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-tachometer-alt text-primary me-2"></i>
+                                <strong>Indicator:</strong>
+                            </div>
+                            <div class="ms-4">
+                                {{ indicator.preferred_kpi.name|default:indicator.preferred_kpi_name }}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-shield-alt text-primary me-2"></i>
+                                <strong>Risk:</strong>
+                            </div>
+                            <div class="ms-4">
+                                <a href="{% url 'risk_detail' risk_id=risk.risk_id %}">{{ risk.title }}</a>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-2">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-sync-alt text-muted me-2"></i>
+                                <strong class="me-2">Period:</strong>
+                                <span class="badge bg-secondary">{{ schedule.get_period_type_display }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-2">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-calendar text-muted me-2"></i>
+                                <strong class="me-2">Scheduled:</strong>
+                                <span>{{ schedule.scheduled_date|date:"M d, Y" }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-2">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-flag text-muted me-2"></i>
+                                <strong class="me-2">Current Status:</strong>
+                                <span class="badge status-{{ schedule.status }} status-badge">
+                                    {{ schedule.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        {% if schedule.is_overdue %}
+                        <div class="col-12 mt-2">
+                            <div class="alert alert-danger mb-0 py-2">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Overdue:</strong> This measurement is {{ schedule.days_until_due|abs_value }} day{{ schedule.days_until_due|abs_value|pluralize }} overdue
+                            </div>
+                        </div>
+                        {% elif schedule.days_until_due >= 0 and schedule.days_until_due <= 7 %}
+                        <div class="col-12 mt-2">
+                            <div class="alert alert-warning mb-0 py-2">
+                                <i class="fas fa-clock me-2"></i>
+                                <strong>Due Soon:</strong> This measurement is due in {{ schedule.days_until_due }} day{{ schedule.days_until_due|pluralize }}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if schedule.completed_measurement %}
+                        <div class="col-12 mt-3">
+                            <div class="alert alert-success mb-0">
+                                <strong><i class="fas fa-check-circle me-2"></i>Completed:</strong>
+                                Value recorded: <strong>{{ schedule.completed_measurement.value }}</strong> 
+                                on {{ schedule.completed_at|date:"M d, Y g:i A" }}
+                                {% if schedule.completed_by %}
+                                by {{ schedule.completed_by.get_full_name|default:schedule.completed_by.username }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Update Form -->
+                <form method="post" id="scheduleForm">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">
+                                {{ form.status.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.status }}
+                            {% if form.status.help_text %}
+                            <div class="form-text">{{ form.status.help_text }}</div>
+                            {% endif %}
+                            {% if form.status.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.status.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.reminder_sent.id_for_label }}" class="form-label">
+                                {{ form.reminder_sent.label }}
+                            </label>
+                            <div class="form-check">
+                                {{ form.reminder_sent }}
+                                <label class="form-check-label" for="{{ form.reminder_sent.id_for_label }}">
+                                    Reminder has been sent for this measurement
+                                </label>
+                            </div>
+                            {% if form.reminder_sent.help_text %}
+                            <div class="form-text">{{ form.reminder_sent.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-12 mb-3">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">
+                                {{ form.notes.label }}
+                            </label>
+                            {{ form.notes }}
+                            {% if form.notes.help_text %}
+                            <div class="form-text">{{ form.notes.help_text }}</div>
+                            {% endif %}
+                            {% if form.notes.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.notes.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Measurement Recording Section -->
+                    <div class="measurement-section" id="measurementSection">
+                        <h6 class="fw-bold mb-3">
+                            <i class="fas fa-chart-line me-2"></i>
+                            Record Measurement (Optional)
+                        </h6>
+                        <p class="text-muted small mb-3">
+                            Complete this schedule by recording the measurement value. The schedule will automatically be marked as completed.
+                        </p>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.measurement_value.id_for_label }}" class="form-label">
+                                    {{ form.measurement_value.label }}
+                                    <span class="text-danger" id="valueRequired" style="display: none;">*</span>
+                                </label>
+                                {{ form.measurement_value }}
+                                {% if indicator.unit %}
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Unit: <strong>{{ indicator.unit }}</strong>
+                                </div>
+                                {% endif %}
+                                {% if form.measurement_value.help_text %}
+                                <div class="form-text">{{ form.measurement_value.help_text }}</div>
+                                {% endif %}
+                                {% if form.measurement_value.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.measurement_value.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Indicator Thresholds</label>
+                                <div class="small">
+                                    {% if indicator.trigger_threshold %}
+                                    <div class="text-warning mb-1">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                        <strong>Caution:</strong> {{ indicator.trigger_operator_symbol }} {{ indicator.trigger_threshold }}
+                                    </div>
+                                    {% endif %}
+                                    {% if indicator.breach_threshold %}
+                                    <div class="text-danger">
+                                        <i class="fas fa-times-circle me-1"></i>
+                                        <strong>Breach:</strong> {{ indicator.breach_operator_symbol }} {{ indicator.breach_threshold }}
+                                    </div>
+                                    {% endif %}
+                                    {% if not indicator.trigger_threshold and not indicator.breach_threshold %}
+                                    <div class="text-muted">No thresholds configured</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.measurement_notes.id_for_label }}" class="form-label">
+                                    {{ form.measurement_notes.label }}
+                                </label>
+                                {{ form.measurement_notes }}
+                                {% if form.measurement_notes.help_text %}
+                                <div class="form-text">{{ form.measurement_notes.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger mt-3">
+                        {% for error in form.non_field_errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                        <a href="{% url 'risk_detail' risk_id=risk.risk_id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i>Update Schedule
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Show/hide measurement section and make value required when status is "completed"
+        document.addEventListener('DOMContentLoaded', function() {
+            const statusSelect = document.getElementById('{{ form.status.id_for_label }}');
+            const measurementSection = document.getElementById('measurementSection');
+            const measurementValue = document.getElementById('{{ form.measurement_value.id_for_label }}');
+            const valueRequired = document.getElementById('valueRequired');
+            
+            function updateMeasurementSection() {
+                if (statusSelect.value === 'completed') {
+                    measurementSection.style.borderColor = '#28a745';
+                    measurementSection.style.backgroundColor = '#d4edda';
+                    measurementValue.required = true;
+                    valueRequired.style.display = 'inline';
+                } else {
+                    measurementSection.style.borderColor = '#2196F3';
+                    measurementSection.style.backgroundColor = '#e3f2fd';
+                    measurementValue.required = false;
+                    valueRequired.style.display = 'none';
+                }
+            }
+            
+            statusSelect.addEventListener('change', updateMeasurementSection);
+            updateMeasurementSection(); // Initial call
+        });
+    </script>
+</body>
+</html>

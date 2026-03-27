@@ -1,0 +1,424 @@
+{% extends 'riskregister/owner_base.html' %}
+{% block title %}My Risk Dashboard{% endblock %}
+{% block content %}
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
+        <div>
+            <h4 class="mb-1">My Risk Dashboard</h4>
+            <p class="text-muted mb-0">Welcome {{ risk_owner.name }}, here's your risk management overview</p>
+        </div>
+        <div class="d-flex gap-2">
+            <form method="get" class="d-flex">
+                <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm me-2" placeholder="Search my items...">
+                <button class="btn btn-outline-primary btn-sm" type="submit">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+                <!-- Summary Statistics Cards (owner-style similar to main dashboard) -->
+                <div class="row g-3 mb-4">
+                    <div class="col-xl-2 col-md-4 col-6">
+                        <div class="stat-summary border rounded shadow-sm" style="background: linear-gradient(135deg, #f0fff4 0%, #fff 100%);">
+                            <div class="stat-label">My Risks</div>
+                            <div class="stat-number text-success">{{ owned_risks_count }}</div>
+                            <small class="text-muted">Owned</small>
+                        </div>
+                    </div>
+                    <div class="col-xl-2 col-md-4 col-6">
+                        <div class="stat-summary border rounded shadow-sm" style="background: linear-gradient(135deg, #f0f6ff 0%, #fff 100%);">
+                            <div class="stat-label">Upcoming Reviews</div>
+                            <div class="stat-number text-primary">{{ upcoming_assessments_count }}</div>
+                            <small class="text-muted">Next 30 Days</small>
+                        </div>
+                    </div>
+                    <div class="col-xl-2 col-md-4 col-6">
+                        <div class="stat-summary border rounded shadow-sm" style="background: linear-gradient(135deg, #f0f8ff 0%, #fff 100%);">
+                            <div class="stat-label">My Actions</div>
+                            <div class="stat-number text-warning">{{ mitigations_count }}</div>
+                            <small class="text-muted">Pending</small>
+                        </div>
+                    </div>
+                    <div class="col-xl-2 col-md-4 col-6">
+                        <div class="stat-summary border rounded shadow-sm" style="background: linear-gradient(135deg, #fff8f0 0%, #fff 100%);">
+                            <div class="stat-label">Overdue Actions</div>
+                            <div class="stat-number text-danger">{{ overdue_mitigations_count }}</div>
+                            <small class="text-muted">Immediate</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs Navigation -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom">
+                        <ul class="nav nav-tabs card-header-tabs" id="ownerTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="risks-tab" data-bs-toggle="tab" data-bs-target="#risks" type="button" role="tab">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    My Risks
+                                    <span class="badge bg-success ms-2">{{ owned_risks_count }}</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab">
+                                    <i class="fas fa-calendar-alt me-2"></i>
+                                    Upcoming Reviews
+                                    <span class="badge bg-primary ms-2">{{ upcoming_assessments_count }}</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="mitigations-tab" data-bs-toggle="tab" data-bs-target="#mitigations" type="button" role="tab">
+                                    <i class="fas fa-shield-alt me-2"></i>
+                                    My Actions
+                                    <span class="badge bg-warning text-dark ms-2">{{ mitigations_count }}</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="controls-tab" data-bs-toggle="tab" data-bs-target="#controls" type="button" role="tab">
+                                    <i class="fas fa-lock me-2"></i>
+                                    My Controls
+                                    <span class="badge bg-secondary ms-2">{{ owned_controls_count }}</span>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="tab-content" id="ownerTabsContent">
+                        <!-- My Risks Tab -->
+                        <div class="tab-pane fade show active" id="risks" role="tabpanel">
+                            <div class="card-body p-0">
+                                {% if owned_risks %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Risk ID</th>
+                                                <th>Title</th>
+                                                <th>Category</th>
+                                                <th>Risk Score</th>
+                                                <th>Status</th>
+                                                <th>Last Updated</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for r in owned_risks %}
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fas {% if r.risk_score >= 20 %}fa-bolt{% elif r.risk_score >= 15 %}fa-exclamation-triangle{% elif r.risk_score >= 8 %}fa-exclamation-circle{% else %}fa-check{% endif %} me-2 flex-shrink-0"></i>
+                                                        <a href="{% url 'risk_owner_detailed' r.risk_id %}" class="fw-semibold text-decoration-none 
+                                                            {% if r.risk_score >= 20 %}text-danger
+                                                            {% elif r.risk_score >= 15 %}text-danger
+                                                            {% elif r.risk_score >= 8 %}text-warning
+                                                            {% else %}text-success
+                                                            {% endif %}">{{ r.risk_id }}</a>
+                                                    </div>
+                                                </td>
+                                                <td>{{ r.title|truncatechars:80 }}</td>
+                                                <td>{{ r.category.name|default:'—' }}</td>
+                                                <td>
+                                                    <span class="badge 
+                                                        {% if r.risk_score >= 20 %}bg-danger
+                                                        {% elif r.risk_score >= 15 %}bg-danger
+                                                        {% elif r.risk_score >= 8 %}bg-warning text-dark
+                                                        {% else %}bg-success
+                                                        {% endif %}">{{ r.risk_score }}</span>
+                                                </td>
+                                                <td><span class="badge bg-success bg-opacity-25 text-success">{{ r.get_status_display }}</span></td>
+                                                <td>{{ r.updated_at|date:"M d, Y" }}</td>
+                                                <td>
+                                                    <a href="{% url 'risk_owner_detailed' r.risk_id %}" class="btn btn-xs btn-outline-primary px-2 py-1" style="font-size:12px; min-width:28px; min-height:28px;">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="empty-state">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <p>No risks assigned to you.</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Upcoming Reviews Tab -->
+                        <div class="tab-pane fade" id="upcoming" role="tabpanel">
+                            <div class="card-body p-0">
+                                {% if upcoming_assessments %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Risk</th>
+                                                <th>Type</th>
+                                                <th>Scheduled Date</th>
+                                                <th>Days Until Due</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for a in upcoming_assessments %}
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-start">
+                                                        <i class="fas fa-calendar-alt me-2 flex-shrink-0"></i>
+                                                        <div>
+                                                            <a href="{% url 'risk_detail' a.risk.risk_id %}" class="fw-semibold text-decoration-none">{{ a.risk.risk_id }}</a>
+                                                            <div class="small text-muted">{{ a.risk.title|truncatewords:10 }}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td><span class="badge bg-primary bg-opacity-25 text-primary">{{ a.get_assessment_type_display }}</span></td>
+                                                <td>{{ a.assessment_date|date:"M d, Y" }}</td>
+                                                <td>
+                                                    {% with days_until=a.assessment_date|timeuntil %}
+                                                    <span class="badge bg-info">{{ days_until|default:"Today" }}</span>
+                                                    {% endwith %}
+                                                </td>
+                                                <td><span class="badge bg-warning bg-opacity-25 text-warning">{{ a.get_status_display }}</span></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-primary">
+                                                        <i class="fas fa-play me-1"></i> Review
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="empty-state">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <p>No upcoming reviews scheduled.</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- My Actions Tab -->
+                        <div class="tab-pane fade" id="mitigations" role="tabpanel">
+                            <div class="card-body p-0">
+                                {% if mitigations %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Risk</th>
+                                                <th>Action</th>
+                                                <th>Strategy</th>
+                                                <th>Due Date</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for m in mitigations %}
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-start">
+                                                        <i class="fas fa-shield-alt me-2 flex-shrink-0"></i>
+                                                        <div>
+                                                            <a href="{% url 'risk_detail' m.risk.risk_id %}" class="fw-semibold text-decoration-none">{{ m.risk.risk_id }}</a>
+                                                            <div class="small text-muted">{{ m.risk.title|truncatewords:8 }}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>{{ m.action|truncatechars:60 }}</td>
+                                                <td><span class="badge bg-secondary bg-opacity-25 text-secondary">{{ m.get_strategy_display }}</span></td>
+                                                <td>
+                                                    {% if m.is_overdue %}
+                                                        <span class="text-danger fw-semibold">
+                                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                                            {{ m.due_date|default:'—' }}
+                                                        </span>
+                                                    {% else %}
+                                                        {{ m.due_date|default:'—' }}
+                                                    {% endif %}
+                                                </td>
+                                                <td><span class="badge bg-warning bg-opacity-25 text-warning">{{ m.get_status_display }}</span></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary" title="Update">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="empty-state">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <p>No actions assigned to you.</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- My Controls Tab -->
+                        <div class="tab-pane fade" id="controls" role="tabpanel">
+                            <div class="card-body p-0">
+                                {% if owned_controls %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Risk</th>
+                                                <th>Control Type</th>
+                                                <th>Description</th>
+                                                <th>Effectiveness</th>
+                                                <th>Weight</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for c in owned_controls %}
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-start">
+                                                        <i class="fas fa-lock me-2 flex-shrink-0"></i>
+                                                        <div>
+                                                            <a href="{% url 'risk_detail' c.risk.risk_id %}" class="fw-semibold text-decoration-none">{{ c.risk.risk_id }}</a>
+                                                            <div class="small text-muted">{{ c.risk.title|truncatewords:6 }}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>{{ c.control_type|title }}</td>
+                                                <td>{{ c.description|truncatechars:80 }}</td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="progress progress-slim me-2" style="width: 60px;">
+                                                            <div class="progress-bar bg-success" style="width: {{ c.effectiveness }}%"></div>
+                                                        </div>
+                                                        <small>{{ c.effectiveness }}%</small>
+                                                    </div>
+                                                </td>
+                                                <td><span class="badge bg-info">{{ c.weight }}</span></td>
+                                                <td><span class="badge bg-success bg-opacity-25 text-success">{{ c.is_active|yesno:"Active,Inactive" }}</span></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-edit me-1"></i> Assess
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="empty-state">
+                                    <i class="fas fa-lock"></i>
+                                    <p>No controls assigned to you.</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Tab functionality with localStorage persistence
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabs = document.querySelectorAll('#ownerTabs button[data-bs-toggle="tab"]');
+            tabs.forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function() {
+                    localStorage.setItem('activeOwnerTab', tab.id);
+                });
+            });
+
+            // Restore active tab from localStorage
+            const activeTab = localStorage.getItem('activeOwnerTab');
+            if (activeTab) {
+                const tabElement = document.getElementById(activeTab);
+                if (tabElement) {
+                    const tabInstance = new bootstrap.Tab(tabElement);
+                    tabInstance.show();
+                }
+            }
+
+            // Quick action buttons
+            const quickActions = document.querySelectorAll('.quick-action-btn');
+            quickActions.forEach(action => {
+                action.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = this.getAttribute('href');
+                    if (target.startsWith('#')) {
+                        const tabButton = document.querySelector(`button[data-bs-target="${target}"]`);
+                        if (tabButton) {
+                            const tabInstance = new bootstrap.Tab(tabButton);
+                            tabInstance.show();
+                        }
+                    }
+                });
+            });
+        });
+
+        function contactSupport() {
+            alert('Support contact functionality to be implemented');
+        }
+
+        function exportMyData() {
+            alert('Export functionality to be implemented');
+    {% endblock %}
+
+{% block extra_scripts %}
+    <script>
+        // Tab functionality with localStorage persistence
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabs = document.querySelectorAll('#ownerTabs button[data-bs-toggle="tab"]');
+            tabs.forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function() {
+                    localStorage.setItem('activeOwnerTab', tab.id);
+                });
+            });
+
+            // Restore active tab from localStorage
+            const activeTab = localStorage.getItem('activeOwnerTab');
+            if (activeTab) {
+                const tabElement = document.getElementById(activeTab);
+                if (tabElement) {
+                    const tabInstance = new bootstrap.Tab(tabElement);
+                    tabInstance.show();
+                }
+            }
+
+            // Quick action buttons
+            const quickActions = document.querySelectorAll('.quick-action-btn');
+            quickActions.forEach(action => {
+                action.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = this.getAttribute('href');
+                    if (target.startsWith('#')) {
+                        const tabButton = document.querySelector(`button[data-bs-target="${target}"]`);
+                        if (tabButton) {
+                            const tabInstance = new bootstrap.Tab(tabButton);
+                            tabInstance.show();
+                        }
+                    }
+                });
+            });
+        });
+
+        function contactSupport() {
+            alert('Support contact functionality to be implemented');
+        }
+
+        function exportMyData() {
+            alert('Export functionality to be implemented');
+        }
+    </script>
+{% endblock %}

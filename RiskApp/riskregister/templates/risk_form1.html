@@ -1,0 +1,756 @@
+{% extends "base.html" %}
+{% block title %}{% if is_edit %}Edit Risk - {{ risk.title }}{% else %}Create Risk{% endif %} - RiskMate ERP{% endblock %}
+{% block extra_styles %}
+<style>
+    .form-label { font-size: 0.9rem; margin-bottom: 0.5rem; font-weight: 600; }
+    .card { border-radius: 0.5rem; border: 0; }
+    .section-header { background: #f8f9fa; padding: 10px 15px; border-radius: 5px; margin-bottom: 15px; border-left: 4px solid #0d6efd; }
+    .section-header h5 { margin: 0; color: #0d6efd; }
+    .threshold-group { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 15px; margin-bottom: 15px; }
+    .threshold-group h6 { color: #495057; font-size: 0.95rem; margin-bottom: 10px; font-weight: 600; }
+    .indicator-form-item { border: 1px solid #dee2e6; border-radius: 5px; padding: 15px; margin-bottom: 15px; background: white; position: relative; }
+    .indicator-form-item .remove-indicator { position: absolute; top: 10px; right: 10px; }
+    .indicator-number { background: #0d6efd; color: white; padding: 2px 8px; border-radius: 3px; font-size: 0.85rem; font-weight: 600; display: inline-block; margin-bottom: 10px; }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
+        <div>
+            {% if is_edit %}
+            <h4 class="mb-1"><i class="fas fa-edit me-2 text-primary"></i>Edit Risk: {{ risk.title }}</h4>
+            {% else %}
+            <h4 class="mb-1"><i class="fas fa-plus-circle me-2 text-primary"></i>Create New Risk</h4>
+            {% endif %}
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'all_risks' %}">Risk Register</a></li>
+                    {% if is_edit %}
+                    <li class="breadcrumb-item active">Edit Risk</li>
+                    {% else %}
+                    <li class="breadcrumb-item active">New Risk</li>
+                    {% endif %}
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    {% if risk_form.non_field_errors %}
+    <div class="alert alert-danger">
+        {{ risk_form.non_field_errors }}
+    </div>
+    {% endif %}
+    
+    <!-- Workflow Info -->
+    {% if not is_edit %}
+    <div class="alert alert-info">
+        <h6 class="alert-heading mb-2"><i class="fas fa-info-circle me-2"></i>New Risk Workflow</h6>
+        <p class="mb-0">After creating the risk, you'll be guided to:</p>
+        <ol class="mb-0 mt-2">
+            <li><strong>Add Indicators</strong> - Define risk indicators with thresholds</li>
+            <li><strong>Assess Indicators</strong> - Record indicator measurements</li>
+            <li><strong>Create Risk Assessment</strong> - Complete overall risk evaluation</li>
+        </ol>
+        <small class="text-muted d-block mt-2"><i class="fas fa-lightbulb me-1"></i>Risk rating will be calculated from indicator assessments</small>
+    </div>
+    {% endif %}
+
+    <form method="post" novalidate id="riskForm">
+        {% csrf_token %}
+                    
+                <!-- Hidden field for total indicator count -->
+                <input type="hidden" name="indicator-TOTAL_FORMS" id="id_indicator-TOTAL_FORMS" value="1">
+                <input type="hidden" name="indicator-INITIAL_FORMS" id="id_indicator-INITIAL_FORMS" value="0">
+
+        <!-- Risk Basic Information -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">
+                    <i class="fas fa-info-circle text-primary me-2"></i> Risk Information
+                </h5>
+            </div>
+            <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ risk_form.department.id_for_label }}">Department</label>
+                                    {{ risk_form.department }}
+                                    {% if risk_form.department.errors %}<div class="text-danger small">{{ risk_form.department.errors }}</div>{% endif %}
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ risk_form.category.id_for_label }}">Category</label>
+                                    {{ risk_form.category }}
+                                    {% if risk_form.category.errors %}<div class="text-danger small">{{ risk_form.category.errors }}</div>{% endif %}
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label" for="{{ risk_form.title.id_for_label }}">Risk Title</label>
+                                    {{ risk_form.title }}
+                                    {% if risk_form.title.errors %}<div class="text-danger small">{{ risk_form.title.errors }}</div>{% endif %}
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label" for="{{ risk_form.description.id_for_label }}">Description</label>
+                                    {{ risk_form.description }}
+                                    {% if risk_form.description.errors %}<div class="text-danger small">{{ risk_form.description.errors }}</div>{% endif %}
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ risk_form.cause.id_for_label }}">Cause</label>
+                                    {{ risk_form.cause }}
+                                    {% if risk_form.cause.errors %}<div class="text-danger small">{{ risk_form.cause.errors }}</div>{% endif %}
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ risk_form.impact_description.id_for_label }}">Impact Description</label>
+                                    {{ risk_form.impact_description }}
+                                    {% if risk_form.impact_description.errors %}<div class="text-danger small">{{ risk_form.impact_description.errors }}</div>{% endif %}
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ risk_form.risk_owner.id_for_label }}">Risk Owner</label>
+                                    {{ risk_form.risk_owner }}
+                                    {% if risk_form.risk_owner.errors %}<div class="text-danger small">{{ risk_form.risk_owner.errors }}</div>{% endif %}
+                                </div>
+
+                                <!-- Inherent Risk Assessment Section -->
+                                <div class="col-12">
+                                    <hr class="my-3">
+                                    <div class="alert alert-info py-2 mb-3">
+                                        <strong><i class="fas fa-exclamation-triangle me-2"></i>Inherent Risk Assessment (Without Controls)</strong>
+                                        <p class="mb-0 small">Rate the risk assuming <strong>NO controls</strong> are in place. This represents the raw, unmitigated risk exposure.</p>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ risk_form.inherent_likelihood.id_for_label }}">
+                                        <i class="fas fa-chart-line me-1 text-warning"></i>{{ risk_form.inherent_likelihood.label }}
+                                    </label>
+                                    {{ risk_form.inherent_likelihood }}
+                                    {% if risk_form.inherent_likelihood.errors %}
+                                        <div class="text-danger small">{{ risk_form.inherent_likelihood.errors }}</div>
+                                    {% endif %}
+                                    <small class="text-muted d-block mt-1">{{ risk_form.inherent_likelihood.help_text }}</small>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ risk_form.inherent_impact.id_for_label }}">
+                                        <i class="fas fa-bolt me-1 text-danger"></i>{{ risk_form.inherent_impact.label }}
+                                    </label>
+                                    {{ risk_form.inherent_impact }}
+                                    {% if risk_form.inherent_impact.errors %}
+                                        <div class="text-danger small">{{ risk_form.inherent_impact.errors }}</div>
+                                    {% endif %}
+                                    <small class="text-muted d-block mt-1">{{ risk_form.inherent_impact.help_text }}</small>
+                                </div>
+
+                                <div class="col-12">
+                                    <hr class="my-3">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label" for="{{ risk_form.linked_kpi.id_for_label }}">Primary KPI</label>
+                                    {{ risk_form.linked_kpi }}
+                                    {% if risk_form.linked_kpi.errors %}<div class="text-danger small">{{ risk_form.linked_kpi.errors }}</div>{% endif %}
+                                    <small class="text-muted">Select the primary KPI that this risk is linked to (optional)</small>
+                                </div>
+
+                                <div class="col-md-12">
+                                    <div class="form-check">
+                                        {{ risk_form.park_risk }}
+                                        <label class="form-check-label" for="{{ risk_form.park_risk.id_for_label }}">
+                                            Save as Draft (Park Risk)
+                                        </label>
+                                        {% if risk_form.park_risk.errors %}<div class="text-danger small">{{ risk_form.park_risk.errors }}</div>{% endif %}
+                                        <div><small class="text-muted">Check to save as draft without submitting for approval</small></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+        <!-- Internal Controls Section -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-shield-alt text-success me-2"></i> Internal Controls
+                    </h5>
+                    <small class="text-muted">Define controls that mitigate this risk (with weighted effectiveness)</small>
+                </div>
+                <button type="button" class="btn btn-sm btn-success" id="addControlBtn">
+                    <i class="fas fa-plus me-1"></i> Add Control
+                </button>
+            </div>
+            <div class="card-body">
+                {{ control_formset.management_form }}
+                <div id="controls-container">
+                    {% for form in control_formset %}
+                    <div class="control-form border rounded p-3 mb-3 position-relative bg-light">
+                        {{ form.id }}
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger py-2 small">{{ form.non_field_errors }}</div>
+                        {% endif %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Control Name *</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}<div class="text-danger small">{{ form.name.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Control Type *</label>
+                                {{ form.control_type }}
+                                {% if form.control_type.errors %}<div class="text-danger small">{{ form.control_type.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Description</label>
+                                {{ form.description }}
+                                {% if form.description.errors %}<div class="text-danger small">{{ form.description.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Effectiveness (0-100%)</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="range" name="{{ form.effectiveness.html_name }}" class="form-control control-effectiveness-slider" min="0" max="100" step="1" value="{{ form.effectiveness.value|default:0 }}" id="{{ form.effectiveness.id_for_label }}">
+                                    <output class="badge bg-primary control-effectiveness-output">{{ form.effectiveness.value|default:0 }}%</output>
+                                </div>
+                                {% if form.effectiveness.errors %}<div class="text-danger small">{{ form.effectiveness.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Weight (1-10)</label>
+                                {{ form.weight }}
+                                {% if form.weight.errors %}<div class="text-danger small">{{ form.weight.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Frequency</label>
+                                {{ form.frequency }}
+                                {% if form.frequency.errors %}<div class="text-danger small">{{ form.frequency.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Control Owner</label>
+                                {{ form.control_owner }}
+                                {% if form.control_owner.errors %}<div class="text-danger small">{{ form.control_owner.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Last Tested Date</label>
+                                {{ form.last_tested_date }}
+                                {% if form.last_tested_date.errors %}<div class="text-danger small">{{ form.last_tested_date.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Weight Rationale</label>
+                                {{ form.weight_rationale }}
+                                {% if form.weight_rationale.errors %}<div class="text-danger small">{{ form.weight_rationale.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-10">
+                                <div class="form-check">
+                                    {{ form.is_active }}
+                                    <label class="form-check-label small"><i class="fas fa-check-circle me-1"></i> Control is Active</label>
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-center justify-content-end">
+                                {{ form.DELETE }}
+                                <label class="form-check-label small text-danger ms-2"><i class="fas fa-trash-alt me-1"></i> Delete</label>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="alert alert-info py-2 small mt-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Control Types:</strong> Preventive (prevents occurrence), Detective (detects after), Corrective (corrects after), Directive (directs behavior). Each type has different effectiveness on likelihood vs impact reduction.
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Category Impacts -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-layer-group text-primary me-2"></i> Additional Categories Affected
+                    </h5>
+                    <small class="text-muted">Specify if this risk affects other categories with different impacts</small>
+                </div>
+                <button type="button" class="btn btn-sm btn-success" id="addCategoryImpactBtn">
+                    <i class="fas fa-plus me-1"></i> Add Category Impact
+                </button>
+            </div>
+            <div class="card-body">
+                {{ category_formset.management_form }}
+                <div id="category-impacts-container">
+                    {% for form in category_formset %}
+                    <div class="category-impact-form border rounded p-3 mb-3 position-relative">
+                        {{ form.id }}
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger py-2 small">{{ form.non_field_errors }}</div>
+                        {% endif %}
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold">Category</label>
+                                {{ form.category }}
+                                {% if form.category.errors %}<div class="text-danger small">{{ form.category.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-semibold">Impact (1-5)</label>
+                                {{ form.impact }}
+                                {% if form.impact.errors %}<div class="text-danger small">{{ form.impact.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-semibold">Likelihood (1-5)</label>
+                                {{ form.likelihood }}
+                                {% if form.likelihood.errors %}<div class="text-danger small">{{ form.likelihood.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Impact Notes</label>
+                                {{ form.notes }}
+                                {% if form.notes.errors %}<div class="text-danger small">{{ form.notes.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-1 d-flex align-items-end">
+                                {{ form.DELETE }}
+                                {% if form.instance.pk %}
+                                <label class="form-check-label small text-danger"><i class="fas fa-trash-alt me-1"></i> Delete</label>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div id="empty-category-impact-form" style="display:none;">
+                    {% with form=category_formset.empty_form %}
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-semibold">Category</label>
+                            {{ form.category }}
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-semibold">Impact (1-5)</label>
+                            {{ form.impact }}
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small fw-semibold">Likelihood (1-5)</label>
+                            {{ form.likelihood }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Impact Notes</label>
+                            {{ form.notes }}
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            {{ form.DELETE }}
+                        </div>
+                    </div>
+                    {% endwith %}
+                </div>
+                <div class="text-muted small mt-2">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Use this to specify if the risk impacts multiple categories with different severity levels.
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mb-4">
+            <a href="{% url 'all_risks' %}" class="btn btn-outline-secondary"><i class="fas fa-times me-1"></i> Cancel</a>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> {% if is_edit %}Update Risk{% else %}Save & Continue to Indicators{% endif %}</button>
+        </div>
+    </form>
+
+    <div class="alert alert-light border">
+        <i class="fas fa-info-circle me-2 text-primary"></i>
+        <small class="text-muted">The risk number will be automatically assigned based on the selected department. {% if not is_edit %}After saving, you'll add risk indicators and assess them to determine the overall risk rating.{% endif %}</small>
+    </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    (function() {
+        const addBtn = document.getElementById('addCategoryImpactBtn');
+        const container = document.getElementById('category-impacts-container');
+        const totalFormsInput = document.querySelector("input[name$='-TOTAL_FORMS']");
+        const emptyTemplateHtml = document.getElementById('empty-category-impact-form').innerHTML;
+        if (addBtn && container && totalFormsInput) {
+            addBtn.addEventListener('click', function() {
+                const index = parseInt(totalFormsInput.value, 10) || 0;
+                const newFormHtml = emptyTemplateHtml.replace(/__prefix__/g, index);
+                const wrapper = document.createElement('div');
+                wrapper.className = 'category-impact-form border rounded p-3 mb-3 position-relative';
+                wrapper.innerHTML = newFormHtml;
+                container.appendChild(wrapper);
+                totalFormsInput.value = index + 1;
+            });
+        }
+    })();
+</script>
+<script>
+        let indicatorCount = 0;
+        
+        // Indicator form template
+        function getIndicatorFormTemplate(index) {
+            return `
+                <div class="indicator-form-item" data-indicator-index="${index}">
+                    <button type="button" class="btn btn-sm btn-danger remove-indicator" onclick="removeIndicator(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <span class="indicator-number">Indicator #${index + 1}</span>
+                    
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label">Preferred KPI for Evaluation</label>
+                            <select name="indicator-${index}-preferred_kpi" class="form-select">
+                                <option value="">---------</option>
+                                {% for kpi in kpis %}
+                                <option value="{{ kpi.id }}">{{ kpi.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">KPI used for evaluation measurements</small>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Custom KPI Name</label>
+                            <input type="text" name="indicator-${index}-preferred_kpi_name" class="form-control" placeholder="Or enter custom KPI name">
+                            <small class="text-muted">If not in dropdown above</small>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Unit of Measurement</label>
+                            <input type="text" name="indicator-${index}-unit" class="form-control" placeholder="e.g., minutes, %, count">
+                        </div>
+
+                        <div class="col-md-8">
+                            <label class="form-label">Data Source</label>
+                            <input type="text" name="indicator-${index}-data_source" class="form-control" placeholder="Where to collect the measurement from">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Risk Appetite Level</label>
+                            <select name="indicator-${index}-appetite_level" class="form-select">
+                                <option value="none">None / Not set</option>
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                                <option value="very_high">Very High</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Tolerance (%)</label>
+                            <input type="number" name="indicator-${index}-appetite_tolerance_pct" class="form-control" value="10.00" step="0.01" min="0" max="100">
+                            <small class="text-muted">Acceptable deviation (0-100)</small>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Direction</label>
+                            <select name="indicator-${index}-direction" class="form-select">
+                                <option value="increase" selected>Higher is worse</option>
+                                <option value="decrease">Lower is worse</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Aggregation Method</label>
+                            <select name="indicator-${index}-aggregation_method" class="form-select">
+                                <option value="average" selected>Average</option>
+                                <option value="sum">Sum</option>
+                                <option value="max">Max</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Measurement Period</label>
+                            <input type="text" name="indicator-${index}-measurement_period" class="form-control" value="monthly" placeholder="e.g., monthly, weekly">
+                        </div>
+                    </div>
+
+                    <div class="threshold-group mt-3">
+                        <h6><i class="fa fa-warning me-1 text-warning"></i> Trigger Threshold (Caution Level)</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Trigger Threshold Value</label>
+                                <input type="number" name="indicator-${index}-trigger_threshold" class="form-control" step="0.0001" placeholder="Caution threshold value">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Trigger Operator</label>
+                                <select name="indicator-${index}-trigger_operator" class="form-select">
+                                    <option value="gt">Greater than (>)</option>
+                                    <option value="gte" selected>Greater than or equal (>=)</option>
+                                    <option value="lt">Less than (<)</option>
+                                    <option value="lte">Less than or equal (<=)</option>
+                                    <option value="eq">Equal to (==)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="threshold-group">
+                        <h6><i class="fa fa-ban me-1 text-danger"></i> Breach Threshold (Critical Level)</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Breach Threshold Value</label>
+                                <input type="number" name="indicator-${index}-breach_threshold" class="form-control" step="0.0001" placeholder="Breach threshold value">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Breach Operator</label>
+                                <select name="indicator-${index}-breach_operator" class="form-select">
+                                    <option value="gt" selected>Greater than (>)</option>
+                                    <option value="gte">Greater than or equal (>=)</option>
+                                    <option value="lt">Less than (<)</option>
+                                    <option value="lte">Less than or equal (<=)</option>
+                                    <option value="eq">Equal to (==)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-2">
+                        <div class="col-12">
+                            <label class="form-label">Evaluation Notes</label>
+                            <textarea name="indicator-${index}-notes" class="form-control" rows="3" placeholder="Additional notes about this indicator..."></textarea>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input type="checkbox" name="indicator-${index}-active" class="form-check-input" id="indicator-${index}-active" checked>
+                                <label class="form-check-label" for="indicator-${index}-active">
+                                    Active Indicator
+                                </label>
+                            </div>
+                            <small class="text-muted">Uncheck to deactivate this indicator</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Add new indicator form
+        function addIndicator() {
+            const container = document.getElementById('indicatorFormsContainer');
+            container.insertAdjacentHTML('beforeend', getIndicatorFormTemplate(indicatorCount));
+            indicatorCount++;
+            updateTotalForms();
+        }
+        
+        // Remove indicator form
+        function removeIndicator(index) {
+            const indicator = document.querySelector(`[data-indicator-index="${index}"]`);
+            if (indicator) {
+                indicator.remove();
+                updateIndicatorNumbers();
+                updateTotalForms();
+            }
+        }
+        
+        // Update indicator numbers after removal
+        function updateIndicatorNumbers() {
+            const indicators = document.querySelectorAll('.indicator-form-item');
+            indicators.forEach((indicator, idx) => {
+                const numberSpan = indicator.querySelector('.indicator-number');
+                if (numberSpan) {
+                    numberSpan.textContent = `Indicator #${idx + 1}`;
+                }
+            });
+        }
+        
+        // Update total forms count
+        function updateTotalForms() {
+            const totalForms = document.querySelectorAll('.indicator-form-item').length;
+            document.getElementById('id_indicator-TOTAL_FORMS').value = totalForms;
+        }
+        
+        // Add click event to add button
+        document.getElementById('addIndicatorBtn').addEventListener('click', addIndicator);
+        
+        // Add first indicator on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            addIndicator();
+        });
+    </script>
+    
+    {% if existing_indicators %}
+    <script>
+        // Pre-populate indicators for editing
+        window.existingIndicators = {{ existing_indicators|safe }};
+    </script>
+    {% endif %}
+
+        <!-- Confirmation modal for deactivating indicators -->
+        <div class="modal fade" id="confirmDeactivateModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Confirm Remove Indicators</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>You've removed one or more existing indicators. Saving will deactivate those indicators and preserve their assessment history. Do you want to continue?</p>
+                        <ul id="deactivateList" class="small"></ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" id="confirmDeactivateBtn" class="btn btn-danger">Yes, Deactivate</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        (function(){
+            const form = document.querySelector('form');
+            if (!form) return;
+
+            form.addEventListener('submit', function(evt){
+                // Only run check when existingIndicators present (edit mode)
+                if (!window.existingIndicators || !window.existingIndicators.length) return;
+
+                // Collect current indicator ids from form inputs
+                const currentIds = Array.from(document.querySelectorAll('input[name$="-id"]'))
+                    .map(i => i.value).filter(v => v);
+
+                const existingIds = window.existingIndicators.map(i => String(i.id));
+                const removed = existingIds.filter(id => !currentIds.includes(id));
+
+                if (removed.length === 0) return; // nothing removed, allow submit
+
+                // Prevent submit and show modal
+                evt.preventDefault();
+                const list = document.getElementById('deactivateList');
+                list.innerHTML = '';
+                removed.forEach(id => {
+                    const item = window.existingIndicators.find(x => String(x.id) === id);
+                    const li = document.createElement('li');
+                    li.textContent = item ? (item.preferred_kpi_name || `Indicator #${id}`) : `Indicator #${id}`;
+                    list.appendChild(li);
+                });
+
+                const confirmModalEl = document.getElementById('confirmDeactivateModal');
+                const confirmModal = new bootstrap.Modal(confirmModalEl);
+                confirmModal.show();
+
+                // Confirm button submits the form
+                document.getElementById('confirmDeactivateBtn').onclick = function(){
+                    confirmModal.hide();
+                    // Allow form to submit without re-check
+                    form.submit();
+                };
+            });
+        })();
+        </script>
+        
+        <!-- Control Formset JavaScript -->
+        <script>
+        (function() {
+            // Add Control Button Handler
+            const addControlBtn = document.getElementById('addControlBtn');
+            const controlsContainer = document.getElementById('controls-container');
+            const totalFormsInput = document.querySelector('input[name="controls-TOTAL_FORMS"]');
+            
+            if (addControlBtn && controlsContainer && totalFormsInput) {
+                addControlBtn.addEventListener('click', function() {
+                    const totalForms = parseInt(totalFormsInput.value);
+                    
+                    // Create new control form HTML from template
+                    const template = `
+                        <div class="control-form border rounded p-3 mb-3 position-relative bg-light">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Control Name *</label>
+                                    <input type="text" name="controls-${totalForms}-name" class="form-control" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Control Type *</label>
+                                    <select name="controls-${totalForms}-control_type" class="form-select" required>
+                                        <option value="">---------</option>
+                                        <option value="preventive">Preventive - Prevents risk occurrence (80% likelihood, 20% impact)</option>
+                                        <option value="detective">Detective - Detects risk after occurrence (30% likelihood, 70% impact)</option>
+                                        <option value="corrective">Corrective - Corrects after occurrence (10% likelihood, 90% impact)</option>
+                                        <option value="directive">Directive - Directs behavior (50% likelihood, 50% impact)</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small fw-semibold">Description</label>
+                                    <textarea name="controls-${totalForms}-description" class="form-control" rows="2"></textarea>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold">Effectiveness (0-100%)</label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="range" name="controls-${totalForms}-effectiveness" class="form-control control-effectiveness-slider" min="0" max="100" step="1" value="0">
+                                        <output class="badge bg-primary control-effectiveness-output">0%</output>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold">Weight (1-10)</label>
+                                    <select name="controls-${totalForms}-weight" class="form-select">
+                                        <option value="1">1 - Minimal importance</option>
+                                        <option value="2">2 - Very low importance</option>
+                                        <option value="3">3 - Low importance</option>
+                                        <option value="4">4 - Below average importance</option>
+                                        <option value="5" selected>5 - Average importance</option>
+                                        <option value="6">6 - Above average importance</option>
+                                        <option value="7">7 - Moderately high importance</option>
+                                        <option value="8">8 - High importance</option>
+                                        <option value="9">9 - Very high importance</option>
+                                        <option value="10">10 - Critical importance</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold">Frequency</label>
+                                    <input type="text" name="controls-${totalForms}-frequency" class="form-control" placeholder="e.g., Daily, Weekly">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Control Owner</label>
+                                    <select name="controls-${totalForms}-control_owner" class="form-select">
+                                        <option value="">---------</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Last Tested Date</label>
+                                    <input type="date" name="controls-${totalForms}-last_tested_date" class="form-control">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small fw-semibold">Weight Rationale</label>
+                                    <textarea name="controls-${totalForms}-weight_rationale" class="form-control" rows="2" placeholder="Why is this control weighted at this level?"></textarea>
+                                </div>
+                                <div class="col-md-10">
+                                    <div class="form-check">
+                                        <input type="checkbox" name="controls-${totalForms}-is_active" class="form-check-input" id="controls-${totalForms}-is_active" checked>
+                                        <label class="form-check-label small" for="controls-${totalForms}-is_active"><i class="fas fa-check-circle me-1"></i> Control is Active</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-center justify-content-end">
+                                    <input type="checkbox" name="controls-${totalForms}-DELETE" class="form-check-input" id="controls-${totalForms}-DELETE">
+                                    <label class="form-check-label small text-danger ms-2" for="controls-${totalForms}-DELETE"><i class="fas fa-trash-alt me-1"></i> Delete</label>
+                                </div>
+                                <input type="hidden" name="controls-${totalForms}-id" value="">
+                            </div>
+                        </div>
+                    `;
+                    
+                    controlsContainer.insertAdjacentHTML('beforeend', template);
+                    totalFormsInput.value = totalForms + 1;
+                    
+                    // Attach effectiveness slider event to new control
+                    attachEffectivenessSliderEvents();
+                });
+            }
+            
+            // Effectiveness Slider Event Handler
+            function attachEffectivenessSliderEvents() {
+                document.querySelectorAll('.control-effectiveness-slider').forEach(slider => {
+                    const output = slider.nextElementSibling;
+                    if (output && output.classList.contains('control-effectiveness-output')) {
+                        // Set initial value
+                        output.textContent = slider.value + '%';
+                        
+                        // Update on change
+                        slider.removeEventListener('input', sliderHandler); // Prevent duplicates
+                        slider.addEventListener('input', sliderHandler);
+                        
+                        function sliderHandler() {
+                            output.textContent = this.value + '%';
+                        }
+                    }
+                });
+            }
+            
+            // Initialize on page load
+            attachEffectivenessSliderEvents();
+        })();
+        </script>
+{% endblock %}

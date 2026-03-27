@@ -1,0 +1,103 @@
+{% extends "base_nosidebar.html" %}
+
+{% block title %}New Risk - RiskMate ERP{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mt-3 mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Register New Risk</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'all_risks' %}">Risk Register</a></li>
+                <li class="breadcrumb-item active">New Risk</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="container-fluid px-0">
+    <div class="card card-sm shadow-sm">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0">Risk Information</h5>
+          <small class="text-muted">Fill required fields and save</small>
+        </div>
+
+        <form method="post" action="{% url 'create_risk' %}" novalidate>
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          {% if form.errors %}
+            <div class="alert alert-warning py-2">
+              <strong>Form errors:</strong>
+              <ul class="mb-0 small">
+                {% for field, errs in form.errors.items %}
+                  <li><strong>{{ field }}:</strong> {{ errs|join:", " }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Department</label>
+              {{ form.department }}
+              {% if form.department.help_text %}<div class="help-text">{{ form.department.help_text }}</div>{% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Category</label>
+              {{ form.category }}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Title</label>
+              {{ form.title }}
+              {% if form.title.help_text %}<div class="help-text">{{ form.title.help_text }}</div>{% endif %}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Description</label>
+              {{ form.description }}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Cause</label>
+              {{ form.cause }}
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Impact Description</label>
+              {{ form.impact_description }}
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Likelihood</label>
+              {{ form.likelihood }}
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Impact</label>
+              {{ form.impact }}
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Risk Owner</label>
+              {{ form.risk_owner }}
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2 mt-4">
+            <a href="{% url 'all_risks' %}" class="btn btn-outline-secondary btn-sm">Cancel</a>
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fa fa-save me-1"></i> Save Risk</button>
+          </div>
+        </form>
+      </div>
+    </div>
+</div>
+{% endblock %}
+ 

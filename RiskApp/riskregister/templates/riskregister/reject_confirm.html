@@ -1,0 +1,98 @@
+{% extends 'base_nosidebar.html' %}
+
+{% block title %}Reject Risk - RiskMate ERP{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .reject-card {
+        max-width: 700px;
+        margin: 50px auto;
+    }
+    
+    .warning-header {
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 8px 8px 0 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="card border-0 shadow-lg reject-card">
+            <div class="warning-header">
+                <h3 class="mb-2">
+                    <i class="fas fa-times-circle me-2"></i>
+                    Reject Risk Submission
+                </h3>
+                <p class="mb-0 opacity-75">Provide a reason for rejection</p>
+            </div>
+            
+            <div class="card-body p-4">
+                <div class="alert alert-warning border-0" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Note:</strong> The risk creator will be notified of the rejection reason.
+                </div>
+                
+                <div class="mb-4">
+                    <h5 class="fw-bold mb-3">Risk Details:</h5>
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="text-muted" width="150">Risk ID:</td>
+                            <td class="fw-bold">{{ risk.risk_id }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Title:</td>
+                            <td class="fw-bold">{{ risk.title }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Department:</td>
+                            <td>{{ risk.department.name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Created By:</td>
+                            <td>{{ risk.created_by.get_full_name|default:risk.created_by.username }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Status:</td>
+                            <td>
+                                <span class="badge bg-warning text-dark">{{ risk.get_status_display }}</span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label for="rejection_reason" class="form-label fw-bold">
+                            <i class="fas fa-comment-alt me-1"></i>
+                            Rejection Reason <span class="text-danger">*</span>
+                        </label>
+                        <textarea 
+                            class="form-control" 
+                            id="rejection_reason" 
+                            name="rejection_reason" 
+                            rows="5"
+                            placeholder="Explain why this risk is being rejected..."
+                            required
+                        ></textarea>
+                        <div class="form-text">
+                            Provide clear feedback to help the creator improve the risk submission.
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-times-circle me-1"></i> Confirm Rejection
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

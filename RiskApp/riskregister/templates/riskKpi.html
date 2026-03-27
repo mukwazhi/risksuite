@@ -1,0 +1,546 @@
+```html name=risk_detail.html
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Risk Detail — Dummy UI</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <!-- Bootstrap CSS for quick styling -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+  <!-- Chart.js for a simple trend placeholder -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    body { padding: 1.5rem 1rem; background:#f4f6f9; }
+    .container { max-width: 1400px; }
+    .risk-header { 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+      color: white;
+      padding: 1.25rem 1.5rem; 
+      border-radius: .75rem; 
+      box-shadow: 0 4px 6px rgba(0,0,0,.1);
+      margin-bottom: 1.5rem;
+    }
+    .risk-header h3 { color: white; font-size: 1.5rem; font-weight: 600; margin-bottom: .25rem; }
+    .risk-header .small-muted { color: rgba(255,255,255,0.9); font-size: .875rem; }
+    .risk-header .text-end h4 { color: white; font-weight: 700; }
+    
+    .indicator-card { 
+      margin-bottom: .625rem; 
+      border: 1px solid #e0e6ed;
+      border-radius: .5rem;
+      transition: all 0.2s ease;
+      background: white;
+    }
+    .indicator-card:hover { 
+      box-shadow: 0 2px 8px rgba(0,0,0,.08); 
+      border-color: #667eea;
+    }
+    .indicator-card .card-body { padding: .875rem 1rem; }
+    
+    .status-badge {
+      font-size: .75rem;
+      font-weight: 600;
+      padding: .3rem .6rem;
+      border-radius: .35rem;
+      display: inline-block;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .status-ok { color: #0f5132; background: #d1e7dd; border: 1px solid #badbcc; }
+    .status-alert { color:#842029; background:#f8d7da; border: 1px solid #f5c2c7; }
+    
+    .small-muted { font-size:.85rem; color:#6c757d; }
+    
+    .form-inline-grid { 
+      display: grid; 
+      grid-template-columns: 2fr 130px 110px 85px 150px; 
+      gap: .625rem; 
+      align-items: start;
+    }
+    .form-label { 
+      font-size: .8rem; 
+      font-weight: 600; 
+      color: #495057;
+      margin-bottom: .25rem !important;
+    }
+    .form-control-sm, .form-select-sm { 
+      font-size: .875rem;
+      padding: .375rem .625rem;
+      border-color: #d1dae3;
+    }
+    .form-control-sm:focus, .form-select-sm:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 .2rem rgba(102,126,234,.15);
+    }
+    
+    .card { 
+      border: 1px solid #e0e6ed;
+      box-shadow: 0 1px 3px rgba(0,0,0,.05);
+      border-radius: .5rem;
+    }
+    .card-title { 
+      font-size: 1.1rem; 
+      font-weight: 600; 
+      color: #2d3748;
+      margin-bottom: 0;
+    }
+    
+    .btn-sm { 
+      font-size: .8125rem;
+      padding: .4rem .75rem;
+      border-radius: .35rem;
+      font-weight: 500;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+    }
+    .btn-success {
+      background: #10b981;
+      border-color: #10b981;
+    }
+    .btn-success:hover {
+      background: #059669;
+      border-color: #059669;
+    }
+    .btn-outline-secondary {
+      border-color: #d1dae3;
+      color: #6c757d;
+    }
+    .btn-outline-secondary:hover {
+      background: #f8f9fa;
+      border-color: #6c757d;
+    }
+    
+    @media (max-width:992px){ 
+      .form-inline-grid { 
+        grid-template-columns: 1fr 1fr; 
+        gap: .5rem;
+      }
+      .form-inline-grid > div:first-child {
+        grid-column: 1 / -1;
+      }
+    }
+    @media (max-width:576px){ 
+      .form-inline-grid { 
+        grid-template-columns: 1fr; 
+      }
+      body { padding: 1rem .5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Risk header -->
+  <div class="risk-header">
+    <div class="d-flex align-items-center justify-content-between">
+      <div style="flex: 1;">
+        <h3 id="risk-title" class="mb-1">R01IT: Privileged Account Misuse</h3>
+        <div class="small-muted mb-2">Department: IT &nbsp;|&nbsp; Category: Access Control</div>
+        <p class="mb-0 small-muted" style="font-size: .875rem; line-height: 1.4;">Risk of credential compromise leading to unauthorized access to privileged systems.</p>
+      </div>
+      <div class="text-end ms-3">
+        <div class="small-muted mb-1">Risk Rating</div>
+        <h4 id="risk-rating" class="mb-0" style="font-size: 2rem;">21</h4>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Left column: Indicators list & editor -->
+    <div class="col-lg-7">
+      <div class="card mb-3">
+        <div class="card-body" style="padding: 1.25rem;">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="card-title">Risk Indicators</h5>
+            <div class="d-flex gap-2">
+              <button id="add-indicator-btn" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-circle"></i> Add Indicator
+              </button>
+              <button id="save-btn" class="btn btn-sm btn-success">
+                <i class="bi bi-save"></i> Save
+              </button>
+            </div>
+          </div>
+
+          <!-- Inline formset style list of indicators -->
+          <form id="indicators-form" onsubmit="return false;">
+            <div id="indicators-list">
+              <!-- Existing indicator (example) -->
+              <div class="card indicator-card" data-index="0">
+                <div class="card-body">
+                  <div class="form-inline-grid">
+                    <div>
+                      <label class="form-label">Indicator Name</label>
+                      <input class="form-control form-control-sm indicator-name" value="MFA coverage (admins)">
+                      <div class="small-muted mt-1"><i class="bi bi-info-circle"></i> Source: IdP</div>
+                    </div>
+
+                    <div>
+                      <label class="form-label">Type</label>
+                      <select class="form-select form-select-sm indicator-type">
+                        <option value="percentage" selected>Percentage</option>
+                        <option value="count">Count</option>
+                        <option value="boolean">Boolean</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label class="form-label">Threshold</label>
+                      <input class="form-control form-control-sm indicator-threshold" value="95">
+                    </div>
+
+                    <div>
+                      <label class="form-label">Operator</label>
+                      <select class="form-select form-select-sm indicator-operator">
+                        <option value=">=" selected>&ge;</option>
+                        <option value=">">&gt;</option>
+                        <option value="<">&lt;</option>
+                        <option value="<=">&le;</option>
+                        <option value="==">==</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label class="form-label">Current Value</label>
+                      <div class="input-group input-group-sm">
+                        <input type="number" class="form-control indicator-current" value="92" step="1">
+                        <button class="btn btn-outline-secondary btn-sm evaluate-btn" type="button" title="Check status">
+                          <i class="bi bi-check-circle"></i>
+                        </button>
+                      </div>
+                      <div class="mt-2"><span class="status-badge status-alert">ALERT</span></div>
+                    </div>
+                  </div>
+
+                  <div class="mt-2 d-flex justify-content-between align-items-center" style="padding-top: .5rem; border-top: 1px solid #f0f2f5;">
+                    <div class="small-muted">
+                      <span class="badge bg-light text-dark border">% Unit</span>
+                      <span class="badge bg-light text-dark border ms-1">Daily</span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger btn-remove" style="font-size: .75rem; padding: .25rem .5rem;">
+                      <i class="bi bi-trash"></i> Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Another example indicator -->
+              <div class="card indicator-card" data-index="1">
+                <div class="card-body">
+                  <div class="form-inline-grid">
+                    <div>
+                      <label class="form-label">Indicator Name</label>
+                      <input class="form-control form-control-sm indicator-name" value="Failed login attempts (24h)">
+                      <div class="small-muted mt-1"><i class="bi bi-info-circle"></i> Source: Auth logs</div>
+                    </div>
+
+                    <div>
+                      <label class="form-label">Type</label>
+                      <select class="form-select form-select-sm indicator-type">
+                        <option value="count" selected>Count</option>
+                        <option value="percentage">Percentage</option>
+                        <option value="boolean">Boolean</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label class="form-label">Threshold</label>
+                      <input class="form-control form-control-sm indicator-threshold" value="100">
+                    </div>
+
+                    <div>
+                      <label class="form-label">Operator</label>
+                      <select class="form-select form-select-sm indicator-operator">
+                        <option value=">=" selected>&ge;</option>
+                        <option value=">">&gt;</option>
+                        <option value="<">&lt;</option>
+                        <option value="<=">&le;</option>
+                        <option value="==">==</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label class="form-label">Current Value</label>
+                      <div class="input-group input-group-sm">
+                        <input type="number" class="form-control indicator-current" value="18" step="1">
+                        <button class="btn btn-outline-secondary btn-sm evaluate-btn" type="button" title="Check status">
+                          <i class="bi bi-check-circle"></i>
+                        </button>
+                      </div>
+                      <div class="mt-2"><span class="status-badge status-ok">OK</span></div>
+                    </div>
+                  </div>
+
+                  <div class="mt-2 d-flex justify-content-between align-items-center" style="padding-top: .5rem; border-top: 1px solid #f0f2f5;">
+                    <div class="small-muted">
+                      <span class="badge bg-light text-dark border">Attempts</span>
+                      <span class="badge bg-light text-dark border ms-1">Hourly</span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger btn-remove" style="font-size: .75rem; padding: .25rem .5rem;">
+                      <i class="bi bi-trash"></i> Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </form>
+
+          <div class="alert alert-info mt-3 mb-0" style="font-size: .85rem; padding: .625rem .875rem; background: #e7f3ff; border-color: #b3d9ff;">
+            <i class="bi bi-info-circle-fill"></i> <strong>Tip:</strong> Click the check icon to evaluate an indicator against its threshold. Use "Save" to persist all changes.
+          </div>
+        </div>
+      </div>
+
+      <!-- Measurements / recent events placeholder -->
+      <div class="card mb-3">
+        <div class="card-body" style="padding: 1rem;">
+          <h6 class="card-title mb-3">
+            <i class="bi bi-clock-history"></i> Recent Measurements
+          </h6>
+          <ul id="recent-events" class="list-unstyled small-muted mb-0" style="line-height: 1.8;">
+            <li><i class="bi bi-dot"></i> <strong>2025-11-25 09:12</strong> — Failed login spike detected on host web-02</li>
+            <li><i class="bi bi-dot"></i> <strong>2025-11-24 17:03</strong> — MFA adoption reached 92% for admins</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column: Dashboard / Trend chart -->
+    <div class="col-lg-5">
+      <div class="card mb-3">
+        <div class="card-body" style="padding: 1rem;">
+          <h6 class="card-title mb-3">
+            <i class="bi bi-graph-up"></i> Indicator Trend
+          </h6>
+          <canvas id="trendChart" style="height:200px"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body" style="padding: 1rem;">
+          <h6 class="card-title mb-3">
+            <i class="bi bi-lightning-fill"></i> Quick Actions
+          </h6>
+          <div class="d-grid gap-2">
+            <button class="btn btn-outline-danger btn-sm">
+              <i class="bi bi-exclamation-triangle"></i> Trigger Incident Response
+            </button>
+            <button class="btn btn-outline-primary btn-sm">
+              <i class="bi bi-ticket"></i> Open Remediation Ticket
+            </button>
+            <button class="btn btn-outline-secondary btn-sm">
+              <i class="bi bi-download"></i> Export Indicators
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Template for adding new indicator (hidden) -->
+<template id="indicator-template">
+  <div class="card indicator-card" data-index="__INDEX__">
+    <div class="card-body">
+      <div class="form-inline-grid">
+        <div>
+          <label class="form-label">Indicator Name</label>
+          <input class="form-control form-control-sm indicator-name" value="New indicator" placeholder="Enter indicator name">
+          <div class="small-muted mt-1"><i class="bi bi-info-circle"></i> Source: manual</div>
+        </div>
+
+        <div>
+          <label class="form-label">Type</label>
+          <select class="form-select form-select-sm indicator-type">
+            <option value="percentage">Percentage</option>
+            <option value="count">Count</option>
+            <option value="boolean">Boolean</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label">Threshold</label>
+          <input class="form-control form-control-sm indicator-threshold" value="" placeholder="0">
+        </div>
+
+        <div>
+          <label class="form-label">Operator</label>
+          <select class="form-select form-select-sm indicator-operator">
+            <option value=">=">&ge;</option>
+            <option value=">">&gt;</option>
+            <option value="<">&lt;</option>
+            <option value="<=">&le;</option>
+            <option value="==">==</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label">Current Value</label>
+          <div class="input-group input-group-sm">
+            <input type="number" class="form-control indicator-current" value="0" step="1" placeholder="0">
+            <button class="btn btn-outline-secondary btn-sm evaluate-btn" type="button" title="Check status">
+              <i class="bi bi-check-circle"></i>
+            </button>
+          </div>
+          <div class="mt-2"><span class="status-badge status-ok">OK</span></div>
+        </div>
+      </div>
+
+      <div class="mt-2 d-flex justify-content-between align-items-center" style="padding-top: .5rem; border-top: 1px solid #f0f2f5;">
+        <div class="small-muted">
+          <span class="badge bg-light text-dark border">(set unit)</span>
+          <span class="badge bg-light text-dark border ms-1">(set freq)</span>
+        </div>
+        <button class="btn btn-sm btn-outline-danger btn-remove" style="font-size: .75rem; padding: .25rem .5rem;">
+          <i class="bi bi-trash"></i> Remove
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+  // Evaluate single indicator value against threshold/operator
+  function evaluateIndicatorCard(card) {
+    const type = card.querySelector('.indicator-type').value;
+    const thresholdRaw = card.querySelector('.indicator-threshold').value;
+    const op = card.querySelector('.indicator-operator').value;
+    const currentRaw = card.querySelector('.indicator-current').value;
+    const badge = card.querySelector('.status-badge');
+
+    // parse values
+    const current = (currentRaw === '' ? null : Number(currentRaw));
+    const threshold = (thresholdRaw === '' ? null : Number(thresholdRaw));
+
+    let result = false;
+    if (type === 'boolean') {
+      // boolean: treat non-zero as true; alert when true
+      result = Boolean(current);
+      // for boolean indicators we show ALERT when true
+      if (result) {
+        badge.textContent = 'ALERT';
+        badge.className = 'status-badge status-alert';
+      } else {
+        badge.textContent = 'OK';
+        badge.className = 'status-badge status-ok';
+      }
+      return result;
+    }
+
+    if (threshold === null || isNaN(threshold) || current === null || isNaN(current)) {
+      // no meaningful comparison
+      badge.textContent = '—';
+      badge.className = 'status-badge';
+      return false;
+    }
+
+    switch (op) {
+      case '>': result = current > threshold; break;
+      case '>=': result = current >= threshold; break;
+      case '<': result = current < threshold; break;
+      case '<=': result = current <= threshold; break;
+      case '==': result = current === threshold; break;
+      default: result = false;
+    }
+
+    if (result) {
+      // result true => condition violated (we interpret as ALERT)
+      badge.textContent = 'ALERT';
+      badge.className = 'status-badge status-alert';
+    } else {
+      badge.textContent = 'OK';
+      badge.className = 'status-badge status-ok';
+    }
+    return result;
+  }
+
+  // Attach listeners to existing dynamic elements (evaluate/remove buttons)
+  function wireCardEvents(card) {
+    card.querySelectorAll('.evaluate-btn').forEach(btn => {
+      btn.addEventListener('click', () => evaluateIndicatorCard(card));
+    });
+    card.querySelectorAll('.btn-remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (confirm('Remove this indicator?')) card.remove();
+      });
+    });
+    // Re-evaluate when numeric fields change
+    ['.indicator-current', '.indicator-threshold', '.indicator-operator', '.indicator-type'].forEach(sel => {
+      card.querySelectorAll(sel).forEach(el => {
+        el.addEventListener('change', () => evaluateIndicatorCard(card));
+      });
+    });
+  }
+
+  // Initialize existing cards
+  document.querySelectorAll('.indicator-card').forEach(wireCardEvents);
+
+  // Add new indicator
+  document.getElementById('add-indicator-btn').addEventListener('click', () => {
+    const tpl = document.getElementById('indicator-template').innerHTML;
+    const list = document.getElementById('indicators-list');
+    const idx = list.children.length;
+    const html = tpl.replace(/__INDEX__/g, idx);
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = html;
+    const card = wrapper.firstElementChild;
+    list.appendChild(card);
+    wireCardEvents(card);
+    card.querySelector('.indicator-name').focus();
+  });
+
+  // Save button (dummy) — dumps the indicators as JSON to console
+  document.getElementById('save-btn').addEventListener('click', () => {
+    const cards = Array.from(document.querySelectorAll('.indicator-card'));
+    const indicators = cards.map(card => ({
+      name: card.querySelector('.indicator-name').value,
+      type: card.querySelector('.indicator-type').value,
+      threshold: card.querySelector('.indicator-threshold').value,
+      operator: card.querySelector('.indicator-operator').value,
+      current: card.querySelector('.indicator-current').value,
+      status: card.querySelector('.status-badge').textContent.trim()
+    }));
+    console.log('Indicators payload:', indicators);
+    alert('✓ Indicators saved successfully! (Check console for details)');
+  });
+
+  // Simple example chart (trend)
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['Nov 20','Nov 21','Nov 22','Nov 23','Nov 24','Nov 25'],
+      datasets: [
+        { label: 'MFA coverage % (admins)', data: [88, 90, 91, 92, 92.5, 92], borderColor:'#0d6efd', tension:0.2, fill:false },
+        { label: 'Failed login attempts (24h)', data: [40, 60, 45, 120, 95, 18], borderColor:'#dc3545', tension:0.2, fill:false, yAxisID: 'y1' }
+      ]
+    },
+    options: {
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        y: { type: 'linear', position: 'left', title: { display: true, text: 'Percentage / Count' } },
+        y1: { type: 'linear', position: 'right', grid: { drawOnChartArea:false }, title: { display:true, text: 'Count' } }
+      },
+      plugins: { legend: { display: true } }
+    }
+  });
+
+</script>
+
+<!-- Bootstrap JS (optional — used here only for components, not required) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+```

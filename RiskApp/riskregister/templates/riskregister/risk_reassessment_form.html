@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Risk Re-Assessment - RiskMate{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .reassessment-card { max-width: 980px; margin: 0 auto; }
+  .context-banner { 
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .current-rating { 
+    background: #fff;
+    border: 2px solid #0d6efd;
+    border-radius: 8px;
+    padding: 1rem;
+  }
+  .score-input { max-width: 100px; }
+    .live-score-display {
+      font-size: 2rem;
+    }
+  </style>
+  {% endblock %}
+  
+  {% block content %}
+  <div class="container mt-5">
+    <div class="alert alert-info">
+      <h5 class="mb-1">Risk Re-Assessment (legacy) removed</h5>
+      <p class="mb-0">The legacy risk re-assessment workflow triggered by assessment decisions has been removed. Use the manual assessment workflow for re-assessments. Database records related to decisions should be purged using <strong>scripts/delete_assessment_decisions.sql</strong>.</p>
+    </div>
+    <a href="{% url 'risk_detail' risk.risk_id %}" class="btn btn-outline-primary">Back to Risk</a>
+  </div>
+  {% endblock %}
+    <h4 class="mb-3"><i class="fas fa-sync-alt me-2"></i>Risk Re-Assessment Triggered</h4>

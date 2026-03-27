@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Notification Preferences - {{ target_user.username }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- User Info Card -->
+            <div class="alert alert-info mb-3">
+                <div class="d-flex align-items-start">
+                    <i class="bi bi-person-circle fs-3 me-3"></i>
+                    <div>
+                        <strong class="d-block">Configuring preferences for:</strong>
+                        <span class="fs-5">{{ target_user.get_full_name|default:target_user.username }}</span>
+                        <span class="text-muted ms-2">({{ target_user.email }})</span>
+                        <div class="mt-2 small">
+                            <i class="bi bi-info-circle me-1"></i>
+                            This user cannot modify these settings. Only superusers can configure notification preferences for users.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Messages intentionally hidden -->
+            
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-gear-fill me-2"></i>Notification Preferences
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Configure how and when this user receives notifications about risks and mitigations. If no preferences are set, default system settings will apply.</p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3 small text-muted">You are editing preferences for <strong>{{ target_user.get_full_name|default:target_user.username }}</strong>.</div>
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>
+                        {% endif %}
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card mb-3">
+                                    <div class="card-header bg-light"><h6 class="mb-0">Channels</h6></div>
+                                    <div class="card-body">
+                                        <div class="form-check mb-2">
+                                            {{ form.enable_email_notifications }}
+                                            <label class="form-check-label ms-2" for="{{ form.enable_email_notifications.id_for_label }}">{{ form.enable_email_notifications.label }}</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card mb-3">
+                                    <div class="card-header bg-light"><h6 class="mb-0">Assessments</h6></div>
+                                    <div class="card-body">
+                                        <div class="form-check mb-1">{{ form.enable_pending_assessments }} <label class="ms-2">{{ form.enable_pending_assessments.label }}</label></div>
+                                        <div class="form-check mb-1">{{ form.enable_upcoming_assessments }} <label class="ms-2">{{ form.enable_upcoming_assessments.label }}</label></div>
+                                        <div class="mb-2">{{ form.upcoming_days_assessment }} <small class="text-muted d-block">{{ form.upcoming_days_assessment.help_text }}</small></div>
+                                        <div class="form-check">{{ form.enable_overdue_assessments }} <label class="ms-2">{{ form.enable_overdue_assessments.label }}</label></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="card mb-3">
+                                    <div class="card-header bg-light"><h6 class="mb-0">Mitigations</h6></div>
+                                    <div class="card-body">
+                                        <div class="form-check mb-1">{{ form.enable_pending_mitigations }} <label class="ms-2">{{ form.enable_pending_mitigations.label }}</label></div>
+                                        <div class="form-check mb-1">{{ form.enable_upcoming_mitigations }} <label class="ms-2">{{ form.enable_upcoming_mitigations.label }}</label></div>
+                                        <div class="mb-2">{{ form.upcoming_days_mitigation }} <small class="text-muted d-block">{{ form.upcoming_days_mitigation.help_text }}</small></div>
+                                        <div class="form-check">{{ form.enable_overdue_mitigations }} <label class="ms-2">{{ form.enable_overdue_mitigations.label }}</label></div>
+                                    </div>
+                                </div>
+
+                                <div class="card mb-3">
+                                    <div class="card-header bg-light"><h6 class="mb-0">Delivery & Admin</h6></div>
+                                    <div class="card-body">
+                                        <div class="mb-2">{{ form.frequency }} <small class="text-muted d-block">{{ form.frequency.help_text }}</small></div>
+                                        <div class="mb-2">{{ form.notify_time }} <small class="text-muted d-block">{{ form.notify_time.help_text }}</small></div>
+                                        <div class="mb-2">{{ form.minimum_risk_level }} <small class="text-muted d-block">{{ form.minimum_risk_level.help_text }}</small></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Back to Dashboard</a>
+                            <div>
+                                <a href="{% url 'notification_test_send' %}" class="btn btn-secondary me-2">Send Test Notification</a>
+                                <button type="submit" class="btn btn-primary">Save Preferences</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            
+        </div>
+    </div>
+</div>
+{% endblock %}

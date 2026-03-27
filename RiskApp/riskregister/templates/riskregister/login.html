@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - RiskSuite</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+        }
+        
+        .login-wrapper {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+        
+        /* Left Brand Panel */
+        .brand-panel {
+            flex: 0 0 40%;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 3rem;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .brand-panel::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+        
+        .brand-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+        
+        .brand-logo {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .brand-logo i {
+            font-size: 2.5rem;
+            color: white;
+        }
+        
+        .brand-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            letter-spacing: -0.5px;
+        }
+        
+        .brand-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            font-weight: 300;
+            line-height: 1.6;
+        }
+        
+        /* Right Form Panel */
+        .form-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 3rem;
+            background: #ffffff;
+        }
+        
+        .form-container {
+            width: 100%;
+            max-width: 420px;
+        }
+        
+        .form-header {
+            margin-bottom: 2.5rem;
+        }
+        
+        .form-header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-header p {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: #334155;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            display: block;
+        }
+        
+        .form-control {
+            border: 1px solid #e2e8f0;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+            background: #ffffff;
+        }
+        
+        .form-control:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            outline: none;
+        }
+        
+        .form-control::placeholder {
+            color: #94a3b8;
+        }
+        
+        .btn-login {
+            background: #3b82f6;
+            border: none;
+            padding: 0.875rem 1.5rem;
+            font-weight: 500;
+            font-size: 0.95rem;
+            border-radius: 6px;
+            color: white;
+            width: 100%;
+            transition: all 0.2s;
+            margin-top: 0.5rem;
+        }
+        
+        .btn-login:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        
+        .alert {
+            border-radius: 6px;
+            border: none;
+            font-size: 0.875rem;
+            padding: 0.875rem 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .alert-danger {
+            background: #fef2f2;
+            color: #991b1b;
+        }
+        
+        .alert-success {
+            background: #f0fdf4;
+            color: #166534;
+        }
+        
+        .form-check {
+            margin-bottom: 1.25rem;
+            margin-top: 1rem;
+        }
+        
+        .form-check-input {
+            width: 1.125rem;
+            height: 1.125rem;
+            margin-top: 0.125rem;
+            border-color: #cbd5e1;
+        }
+        
+        .form-check-input:checked {
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+        }
+        
+        .form-check-label {
+            font-size: 0.875rem;
+            color: #475569;
+            margin-left: 0.5rem;
+        }
+        
+        .footer-text {
+            margin-top: 3rem;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.813rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 992px) {
+            .brand-panel {
+                flex: 0 0 35%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .login-wrapper {
+                flex-direction: column;
+            }
+            
+            .brand-panel {
+                flex: none;
+                min-height: 30vh;
+                padding: 2rem;
+            }
+            
+            .brand-title {
+                font-size: 1.75rem;
+            }
+            
+            .brand-subtitle {
+                font-size: 0.95rem;
+            }
+            
+            .form-panel {
+                padding: 2rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <!-- Left Brand Panel -->
+        <div class="brand-panel">
+            <div class="brand-content">
+                <div class="brand-logo">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <h2 class="brand-title">RiskSuite</h2>
+                <p class="brand-subtitle">Enterprise Risk Management<br>& Governance Platform</p>
+            </div>
+        </div>
+        
+        <!-- Right Form Panel -->
+        <div class="form-panel">
+            <div class="form-container">
+                <div class="form-header">
+                    <h1>Sign in</h1>
+                    <p>Enter your credentials to access your account</p>
+                </div>
+                
+                {# Notifications removed on login page to keep UI clean #}
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Email or Username</label>
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="username" 
+                            name="username" 
+                            placeholder="name@company.com"
+                            required
+                            autofocus
+                        >
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input 
+                            type="password" 
+                            class="form-control" 
+                            id="password" 
+                            name="password" 
+                            placeholder="Enter your password"
+                            required
+                        >
+                    </div>
+                    
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                        <label class="form-check-label" for="remember">
+                            Keep me signed in
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-login">
+                        Sign in
+                    </button>
+                </form>
+                
+                <div class="footer-text">
+                    <p>&copy; 2025 RiskSuite. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

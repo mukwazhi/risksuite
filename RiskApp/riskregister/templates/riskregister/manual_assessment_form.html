@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-3">
+  <h3>{{ form_title }}</h3>
+  <div class="row">
+    <div class="col-md-7">
+      <div class="card mb-3">
+        <div class="card-body">
+          <h5>Indicator Results</h5>
+          <ul class="list-group">
+            {% for item in indicators_summary %}
+            <li class="list-group-item d-flex justify-content-between align-items-start">
+              <div>
+                <div class="fw-bold">{{ item.indicator.name }}</div>
+                <div class="small text-muted">Measured: {{ item.measured_value }} on {{ item.assessment_date }}</div>
+                <div class="small">{{ item.rationale }}</div>
+              </div>
+              {% if item.status == 'breached' %}
+                <span class="badge bg-danger rounded-pill">{{ item.status }}</span>
+              {% elif item.status == 'caution' %}
+                <span class="badge bg-warning rounded-pill">{{ item.status }}</span>
+              {% else %}
+                <span class="badge bg-success rounded-pill">{{ item.status }}</span>
+              {% endif %}
+            </li>
+            {% empty %}
+            <li class="list-group-item">No indicator assessments found.</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      <!-- Assessment History Section -->
+      {% if all_assessments_with_indicators %}
+      <div class="card mb-3">
+        <div class="card-header bg-white border-bottom">
+          <h5 class="mb-0 fw-bold">
+            <i class="fas fa-history me-2 text-muted"></i>
+            Assessment History
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          {% for assessment_data in all_assessments_with_indicators %}
+          <div class="assessment-block border-bottom" style="padding: 1.5rem;">
+            <!-- Assessment Header - Collapsible -->
+            <div class="row mb-3" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#assessment{{ forloop.counter }}" aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="assessment{{ forloop.counter }}">
+              <div class="col-md-8">
+                <div class="d-flex align-items-center mb-2">
+                  {% if forloop.first %}
+                  <span class="badge bg-primary me-2 px-3 py-2">
+                    <i class="fas fa-star me-1"></i> LATEST
+                  </span>
+                  {% endif %}
+                  <h6 class="mb-0 fw-bold">Assessment {{ forloop.counter }}</h6>
+                  <span class="ms-2 text-muted">—</span>
+                  <span class="ms-2 text-muted">{{ assessment_data.assessment.assessment_date|date:"F d, Y" }}</span>
+                  <span class="badge rounded-pill bg-white text-secondary border ms-2">
+                    {{ assessment_data.assessment.get_assessment_type_display }}
+                  </span>
+                  <i class="fas fa-chevron-down ms-2 text-muted"></i>
+                </div>
+                {% if assessment_data.assessment.assessor %}
+                <div class="text-muted small">
+                  <i class="fas fa-user me-1"></i>
+                  Assessed by {{ assessment_data.assessment.assessor.get_full_name|default:assessment_data.assessment.assessor.username }}
+                </div>
+                {% endif %}
+              </div>
+              <div class="col-md-4 text-end">
+                <div class="mb-1">
+                  <span class="display-6 fw-bold text-primary">{{ assessment_data.assessment.risk_score }}</span>
+                  <small class="text-muted">/ 25</small>
+                </div>
+                <span class="badge bg-{{ assessment_data.assessment.get_rating_class }} px-3 py-2">
+                  {{ assessment_data.assessment.get_rating_display }}
+                </span>
+                <div class="small text-muted mt-2">
+                  L: {{ assessment_data.assessment.likelihood }} / 5 &nbsp; I: {{ assessment_data.assessment.impact }} / 5
+                </div>
+                {% if assessment_data.assessment.trend != 'new' %}
+                <div class="mt-2">
+                  {% if assessment_data.assessment.trend == 'improving' %}
+                  <span class="text-success small"><i class="fas fa-arrow-down"></i> Improving</span>
+                  {% elif assessment_data.assessment.trend == 'deteriorating' %}
+                  <span class="text-danger small"><i class="fas fa-arrow-up"></i> Deteriorating</span>
+                  {% else %}
+                  <span class="text-secondary small"><i class="fas fa-minus"></i> Stable</span>
+                  {% endif %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            
+            <!-- Collapsible Content -->
+            <div class="collapse {% if forloop.first %}show{% endif %}" id="assessment{{ forloop.counter }}">
+            
+            {% if assessment_data.indicator_assessments %}
+            <!-- KRI Assessment Results -->
+            <div class="mt-3">
+              <h6 class="fw-bold mb-2">
+                <i class="fas fa-tachometer-alt me-1 text-primary"></i>
+                Key Risk Indicator Results
+              </h6>
+              
+              <!-- KRI Summary -->
+              <div class="row g-2 mb-3">
+                <div class="col-auto">
+                  <span class="badge bg-light text-dark border">{{ assessment_data.total_indicators }} Indicators</span>
+                </div>
+                <div class="col-auto">
+                  <span class="badge bg-success">{{ assessment_data.on_target }} On Target</span>
+                </div>
+                <div class="col-auto">
+                  <span class="badge bg-warning">{{ assessment_data.caution }} Caution</span>
+                </div>
+                <div class="col-auto">
+                  <span class="badge bg-danger">{{ assessment_data.breached }} Breached</span>
+                </div>
+              </div>
+              
+              <!-- Indicator Details Table -->
+              <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th style="width: 5%">#</th>
+                      <th style="width: 35%">Indicator</th>
+                      <th style="width: 15%" class="text-center">Value</th>
+                      <th style="width: 15%" class="text-center">Status</th>
+                      <th style="width: 15%" class="text-center">Trend</th>
+                      <th style="width: 15%">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for ind_assessment in assessment_data.indicator_assessments %}
+                    <tr>
+                      <td class="text-muted small">{{ forloop.counter }}</td>
+                      <td>
+                        <strong class="small">{{ ind_assessment.indicator.preferred_kpi_name|default:ind_assessment.indicator.name }}</strong>
+                      </td>
+                      <td class="text-center">
+                        <span class="badge bg-light text-dark border">
+                          {{ ind_assessment.measured_value|floatformat:2 }}
+                          {% if ind_assessment.indicator.unit %}{{ ind_assessment.indicator.unit }}{% endif %}
+                        </span>
+                      </td>
+                      <td class="text-center">
+                        {% if ind_assessment.status == 'on_target' %}
+                        <span class="badge bg-success">On Target</span>
+                        {% elif ind_assessment.status == 'caution' %}
+                        <span class="badge bg-warning">Caution</span>
+                        {% elif ind_assessment.status == 'breached' %}
+                        <span class="badge bg-danger">Breached</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ ind_assessment.get_status_display }}</span>
+                        {% endif %}
+                      </td>
+                      <td class="text-center small">
+                        {% if ind_assessment.trend == 'improving' %}
+                        <span class="text-success"><i class="fas fa-arrow-down"></i></span>
+                        {% elif ind_assessment.trend == 'deteriorating' %}
+                        <span class="text-danger"><i class="fas fa-arrow-up"></i></span>
+                        {% elif ind_assessment.trend == 'stable' %}
+                        <span class="text-secondary"><i class="fas fa-minus"></i></span>
+                        {% else %}
+                        <span class="text-info"><i class="fas fa-circle"></i></span>
+                        {% endif %}
+                      </td>
+                      <td class="small text-muted">
+                        {{ ind_assessment.notes|default:"—"|truncatewords:8 }}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            {% else %}
+            <div class="alert alert-warning mb-0 mt-3">
+              <i class="fas fa-exclamation-triangle me-1"></i> No KRI assessments linked to this risk assessment.
+            </div>
+            {% endif %}
+            
+            <!-- Assessment Notes (if any) -->
+            {% if assessment_data.assessment.rationale or assessment_data.assessment.recommendations %}
+            <div class="mt-3 pt-3 border-top">
+              <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#notes{{ forloop.counter }}">
+                <i class="fas fa-chevron-down me-1"></i> View Assessment Notes
+              </button>
+              <div class="collapse mt-2" id="notes{{ forloop.counter }}">
+                {% if assessment_data.assessment.rationale %}
+                <div class="mb-2">
+                  <strong class="small">Rationale:</strong>
+                  <p class="text-muted small mb-0">{{ assessment_data.assessment.rationale }}</p>
+                </div>
+                {% endif %}
+                {% if assessment_data.assessment.recommendations %}
+                <div>
+                  <strong class="small">Recommendations:</strong>
+                  <p class="text-muted small mb-0">{{ assessment_data.assessment.recommendations }}</p>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+            </div>
+            <!-- End Collapsible Content -->
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    <div class="col-md-5">
+      <div class="card">
+        <div class="card-body">
+          <h5>Manual Risk Assessment</h5>
+          <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button class="btn btn-primary" type="submit">Save Assessment</button>
+            <a href="{% url 'risk_detail' risk_id=risk.risk_id %}" class="btn btn-secondary">Cancel</a>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

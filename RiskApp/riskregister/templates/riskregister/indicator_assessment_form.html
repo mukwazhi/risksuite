@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}{{ form_title }} - RiskMate{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .assessment-card { max-width: 980px; margin: 0 auto; }
+  .indicator-meta { border-left: 4px solid #0d6efd; padding: 1rem; background: #fff; }
+  .threshold-badge { font-weight:600; }
+  .required-indicator { color: #dc3545; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="assessment-card">
+  <!-- Workflow Progress Indicator -->
+  {% if is_workflow %}
+  <div class="alert alert-info mb-3">
+    <h6 class="alert-heading mb-2"><i class="fas fa-route me-2"></i>New Risk Creation Workflow</h6>
+    <div class="d-flex align-items-center">
+      <span class="badge bg-success me-2"><i class="fas fa-check"></i> 1. Risk Created</span>
+      <i class="fas fa-arrow-right mx-2"></i>
+      <span class="badge bg-success me-2"><i class="fas fa-check"></i> 2. Indicators Added</span>
+      <i class="fas fa-arrow-right mx-2"></i>
+      <span class="badge bg-primary me-2"><i class="fas fa-spinner fa-pulse"></i> 3. Assessing Indicators ({{ assessed_count }} of {{ indicators_count }})</span>
+      <i class="fas fa-arrow-right mx-2"></i>
+      <span class="badge bg-secondary">4. Risk Assessment</span>
+    </div>
+  </div>
+  {% endif %}
+  
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+          <h4 class="mb-1">
+            <i class="fas fa-chart-line text-primary me-2"></i>{{ form_title }}
+            {% if is_workflow %}
+              <span class="badge bg-info ms-2">Step 3 of 4</span>
+            {% endif %}
+          </h4>
+          <p class="text-muted mb-0">Record a structured indicator assessment for this risk.</p>
+        </div>
+        <div>
+          <a href="{% url 'risk_detail' risk_id=risk.risk_id %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>Back to risk
+          </a>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-8">
+          <div class="indicator-meta">
+            <strong class="d-block mb-1">{{ indicator.preferred_kpi.name|default:indicator.preferred_kpi_name }}</strong>
+            <div class="small text-muted">Risk: {{ risk.title }}</div>
+            <div class="small text-muted">Indicator unit: {{ indicator.unit|default:'—' }}</div>
+            {% if schedule %}
+            <div class="small text-muted">Scheduled: {{ schedule.scheduled_date|date:"M d, Y" }}</div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="col-md-4 text-end">
+          {% if indicator.trigger_threshold or indicator.breach_threshold %}
+          <div class="card p-2">
+            <div class="small text-muted">Thresholds</div>
+            {% if indicator.trigger_threshold %}
+            <div class="threshold-badge text-warning">Caution: {{ indicator.trigger_operator }} {{ indicator.trigger_threshold }}</div>
+            {% endif %}
+            {% if indicator.breach_threshold %}
+            <div class="threshold-badge text-danger">Breach: {{ indicator.breach_operator }} {{ indicator.breach_threshold }}</div>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="card mb-3">
+          <div class="card-body">
+            <h6 class="mb-3">Measurement</h6>
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label class="form-label">{{ form.assessment_date.label }} <span class="required-indicator">*</span></label>
+                {{ form.assessment_date }}
+                {% if form.assessment_date.errors %}<div class="text-danger small">{% for e in form.assessment_date.errors %}{{ e }}{% endfor %}</div>{% endif %}
+              </div>
+              <div class="col-md-4 mb-3">
+                <label class="form-label">{{ form.measured_value.label }} <span class="required-indicator">*</span></label>
+                {{ form.measured_value }}
+                {% if form.measured_value.errors %}<div class="text-danger small">{% for e in form.measured_value.errors %}{{ e }}{% endfor %}</div>{% endif %}
+              </div>
+              <div class="col-md-4 mb-3">
+                <div class="form-check">
+                  {{ form.is_financial }} <label class="form-check-label">{{ form.is_financial.label }}</label>
+                </div>
+                {{ form.currency_code }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-body">
+            <h6 class="mb-3">Notes & Evidence</h6>
+            <div class="mb-3">
+              <label class="form-label">{{ form.assessment_notes.label }} <span class="required-indicator">*</span></label>
+              {{ form.assessment_notes }}
+            </div>
+            <div class="mb-3">
+              <label class="form-label">{{ form.analysis.label }}</label>
+              {{ form.analysis }}
+            </div>
+            <div class="mb-3">
+              <label class="form-label">{{ form.corrective_actions.label }}</label>
+              {{ form.corrective_actions }}
+            </div>
+            <div class="mb-3">
+              <label class="form-label">{{ form.evidence_documents.label }}</label>
+              {{ form.evidence_documents }}
+            </div>
+          </div>
+        </div>
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>
+        {% endif %}
+
+        <div class="d-flex justify-content-between">
+          <a href="{% url 'indicator_assessment_history' indicator.pk %}" class="btn btn-outline-secondary">Cancel</a>
+          <button class="btn btn-primary"><i class="fas fa-save me-1"></i>Record Assessment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // hide currency if not financial
+  document.addEventListener('DOMContentLoaded', function(){
+    const chk = document.getElementById('{{ form.is_financial.id_for_label }}');
+    const currency = document.getElementById('{{ form.currency_code.id_for_label }}');
+    function toggle(){ if(!chk) return; currency.closest('.form-control') ? currency.closest('.form-control').style.display = chk.checked ? 'block' : 'none' : null; }
+    if(chk){ chk.addEventListener('change', toggle); toggle(); }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,937 @@
+{% extends 'base.html' %}
+{% load math_extras %}
+{% block extra_styles %}
+<style>
+/* Global admin font stack + sizing */
+:root{
+    --admin-font-size:13px;
+    --admin-input-vertical:6px;
+    --admin-input-horizontal:8px;
+    /* Corporate color palette */
+    --color-critical: #b00020;
+    --color-danger: #dc3545;
+    --color-warning: #ffc107;
+    --color-info: #0dcaf0;
+    --color-success: #198754;
+    --color-primary: #0d6efd;
+    --color-secondary: #6c757d;
+    /* Action status colors */
+    --color-overdue: #dc3545;
+    --color-urgent: #fd7e14;
+    --color-upcoming: #0dcaf0;
+    --color-scheduled: #198754;
+    --color-at-risk: #ffc107;
+}
+html { scroll-behavior: smooth; }
+/* Action card enhancements */
+.action-card { border-left: 4px solid transparent; transition: all 0.2s ease; }
+.action-card:hover { transform: translateX(4px); box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.1) !important; }
+.action-card.overdue { border-left-color: var(--color-overdue); background-color: rgba(220, 53, 69, 0.02); }
+.action-card.urgent { border-left-color: var(--color-urgent); background-color: rgba(253, 126, 20, 0.02); }
+.action-card.upcoming { border-left-color: var(--color-upcoming); background-color: rgba(13, 202, 240, 0.02); }
+.action-card.scheduled { border-left-color: var(--color-scheduled); background-color: rgba(25, 135, 84, 0.02); }
+.action-card.at-risk { border-left-color: var(--color-at-risk); background-color: rgba(255, 193, 7, 0.02); }
+.priority-indicator { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+.priority-critical { background-color: var(--color-critical); }
+.priority-high { background-color: var(--color-danger); }
+.priority-medium { background-color: var(--color-warning); }
+.priority-low { background-color: var(--color-success); }
+.status-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.3px; }
+.timeline-marker { width: 3px; background: linear-gradient(to bottom, var(--color-danger) 0%, var(--color-warning) 50%, var(--color-success) 100%); position: relative; }
+.timeline-dot { width: 12px; height: 12px; border-radius: 50%; position: absolute; left: -4.5px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.stat-summary { border-radius: 8px; padding: 1rem; text-align: center; transition: transform 0.2s; }
+.stat-summary:hover { transform: translateY(-3px); }
+.stat-number { font-size: 2rem; font-weight: 700; line-height: 1; margin: 0.5rem 0; }
+.stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: #6c757d; font-weight: 600; }
+.sortable-header { cursor: pointer; user-select: none; position: relative; padding-right: 1.5rem; }
+.sortable-header:hover { background-color: rgba(0,0,0,0.05); }
+.filter-chip { display: inline-block; padding: 4px 12px; border-radius: 16px; font-size: 12px; border: 1px solid #dee2e6; background: white; cursor: pointer; transition: all 0.2s; margin-right: 0.5rem; margin-bottom: 0.5rem; }
+.filter-chip:hover { background-color: #f8f9fa; border-color: var(--color-primary); }
+.filter-chip.active { background-color: var(--color-primary); color: white; border-color: var(--color-primary); }
+.action-item { transition: background-color 0.2s; cursor: pointer; }
+.action-item:hover { background-color: rgba(0,0,0,0.02); }
+.progress-slim { height: 6px; border-radius: 3px; }
+/* Compact list view */
+.compact-list .list-group-item { padding: 0.75rem 1rem; border-left: 3px solid transparent; }
+.compact-list .list-group-item:hover { background-color: #f8f9fa; border-left-color: var(--color-primary); }
+
+/* Responsive text sizing */
+@media (max-width: 768px) {
+    .stat-number { font-size: 1.5rem; }
+    .stat-label { font-size: 0.65rem; }
+}
+
+/* Section headers */
+.section-header { border-bottom: 2px solid #dee2e6; padding-bottom: 0.75rem; margin-bottom: 1.25rem; }
+.section-header h5 { margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem; }
+
+/* Empty state */
+.empty-state { padding: 3rem 1rem; text-align: center; color: #6c757d; }
+.empty-state i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.3; }
+
+/* Action icon indicators */
+.action-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.icon-overdue { background-color: rgba(220, 53, 69, 0.1); color: var(--color-overdue); }
+.icon-urgent { background-color: rgba(253, 126, 20, 0.1); color: var(--color-urgent); }
+.icon-upcoming { background-color: rgba(13, 202, 240, 0.1); color: var(--color-upcoming); }
+.icon-scheduled { background-color: rgba(25, 135, 84, 0.1); color: var(--color-scheduled); }
+
+</style>
+{% endblock %}
+{% block content %}
+            
+            <!-- Main Content -->
+                <!-- Page Header -->
+                <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
+                    <div>
+                        <h4 class="mb-1">Actions Dashboard</h4>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+                                <li class="breadcrumb-item active">Actions</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="refreshActions()">
+                            <i class="fas fa-sync-alt me-1"></i> Refresh
+                        </button>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-filter me-1"></i> View
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" onclick="setView('all')">All Actions</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="setView('overdue')">Overdue Only</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="setView('upcoming')">Upcoming Only</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#" onclick="setView('mytasks')">My Tasks</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Statistics Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-xl-2 col-md-4 col-6">
+                        <a href="#overdue-actions" class="text-decoration-none">
+                            <div class="stat-summary border rounded shadow-sm" style="background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);">
+                                <div class="stat-label">Overdue</div>
+                                <div class="stat-number text-danger">{{ overdue_count|default:0 }}</div>
+                                <small class="text-muted">Immediate Action</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-xl-2 col-md-4 col-6">
+                        <a href="#mitigation-target-dates" class="text-decoration-none">
+                            <div class="stat-summary border rounded shadow-sm" style="background: linear-gradient(135deg, #fff8f0 0%, #fff 100%);">
+                                <div class="stat-label">Urgent</div>
+                                <div class="stat-number text-warning">{{ urgent_count|default:0 }}</div>
+                                <small class="text-muted">Next 7 Days</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-xl-2 col-md-4 col-6">
+                        <a href="#upcoming-actions" class="text-decoration-none">
+                            <div class="stat-summary border rounded shadow-sm" style="background: linear-gradient(135deg, #f0f8ff 0%, #fff 100%);">
+                                <div class="stat-label">Upcoming</div>
+                                <div class="stat-number text-info">{{ upcoming_count|default:0 }}</div>
+                                <small class="text-muted">Next 15 Days</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-xl-2 col-md-4 col-6">
+                        <a href="#mitigation-target-dates" class="text-decoration-none">
+                            <div class="stat-summary border rounded shadow-sm" style="background: linear-gradient(135deg, #f0fff4 0%, #fff 100%);">
+                                <div class="stat-label">Scheduled</div>
+                                <div class="stat-number text-success">{{ scheduled_count|default:0 }}</div>
+                                <small class="text-muted">On Track</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-xl-2 col-md-4 col-6">
+                        <a href="#mitigation-target-dates" class="text-decoration-none">
+                            <div class="stat-summary border rounded shadow-sm" style="background: linear-gradient(135deg, #fffef0 0%, #fff 100%);">
+                                <div class="stat-label">At Risk</div>
+                                <div class="stat-number" style="color: var(--color-at-risk);">{{ at_risk_count|default:0 }}</div>
+                                <small class="text-muted">Monitor</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-xl-2 col-md-4 col-6">
+                        <a href="#all-actions" class="text-decoration-none">
+                            <div class="stat-summary border rounded shadow-sm" style="background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);">
+                                <div class="stat-label">Total</div>
+                                <div class="stat-number text-secondary">{{ total_actions|default:0 }}</div>
+                                <small class="text-muted">All Actions</small>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Filter Chips -->
+                <div class="mb-4">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <span class="text-muted small fw-semibold">Filter by:</span>
+                        <span class="filter-chip active" data-filter="all">
+                            <i class="fas fa-list me-1"></i> All
+                        </span>
+                        <span class="filter-chip" data-filter="mitigations">
+                            <i class="fas fa-shield-alt me-1"></i> Mitigations
+                        </span>
+                        <span class="filter-chip" data-filter="assessments">
+                            <i class="fas fa-clipboard-check me-1"></i> Assessments
+                        </span>
+                        <span class="filter-chip" data-filter="reviews">
+                            <i class="fas fa-eye me-1"></i> Reviews
+                        </span>
+                        <span class="filter-chip" data-filter="indicators">
+                            <i class="fas fa-chart-line me-1"></i> Indicators
+                        </span>
+                    </div>
+                </div>
+
+                <!-- SECTION 1: Overdue Items (Critical Priority) -->
+                {% if overdue_mitigations or overdue_indicators %}
+                <div id="overdue-actions" class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-danger bg-opacity-10 border-0">
+                        <div class="section-header border-0 pb-0 mb-0">
+                            <h5>
+                                <i class="fas fa-exclamation-triangle text-danger"></i>
+                                <span>Overdue Actions</span>
+                                <span class="badge bg-danger ms-2">{{ overdue_count }}</span>
+                            </h5>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <!-- Overdue Mitigations -->
+                        {% if overdue_mitigations %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col" class="sortable-header" onclick="sortTable(this, 0)">
+                                            <i class="fas fa-circle priority-indicator priority-critical"></i> Risk/Action
+                                        </th>
+                                        <th scope="col">Department</th>
+                                        <th scope="col">Responsible</th>
+                                        <th scope="col" class="sortable-header" onclick="sortTable(this, 3)">Due Date</th>
+                                        <th scope="col">Days Overdue</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for mitigation in overdue_mitigations %}
+                                    <tr class="action-item" data-category="mitigations" data-status="overdue">
+                                        <td>
+                                            <div class="d-flex align-items-start">
+                                                <div class="action-icon icon-overdue me-2 flex-shrink-0">
+                                                    <i class="fas fa-shield-alt"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-semibold">{{ mitigation.risk.risk_id }}: {{ mitigation.risk.title|truncatewords:8 }}</div>
+                                                    <div class="small text-muted">{{ mitigation.action|truncatewords:10 }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark">{{ mitigation.risk.department.abbreviation|default:mitigation.risk.department.name|default:"N/A" }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="small">
+                                                <i class="fas fa-user me-1 text-muted"></i>
+                                                {{ mitigation.responsible_person.name|default:"Unassigned" }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="text-danger fw-semibold">
+                                                <i class="fas fa-calendar-times me-1"></i>
+                                                {{ mitigation.due_date|date:"M d, Y" }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-danger">
+                                                {{ overdue_days_map|get_item:mitigation.pk|default:0 }} days
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="status-badge bg-danger bg-opacity-10 text-danger">
+                                                {{ mitigation.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'risk_detail' risk_id=mitigation.risk.risk_id %}" class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-arrow-right"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endif %}
+
+                        <!-- Overdue Indicator Measurements -->
+                        {% if overdue_indicators %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col">Indicator</th>
+                                        <th scope="col">Risk</th>
+                                        <th scope="col">Scheduled Date</th>
+                                        <th scope="col">Days Overdue</th>
+                                        <th scope="col">Frequency</th>
+                                        <th scope="col">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for schedule in overdue_indicators %}
+                                    <tr class="action-item" data-category="indicators" data-status="overdue">
+                                        <td>
+                                            <div class="d-flex align-items-start">
+                                                <div class="action-icon icon-overdue me-2 flex-shrink-0">
+                                                    <i class="fas fa-chart-line"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-semibold">{{ schedule.indicator.preferred_kpi_name|default:"Risk Indicator" }}</div>
+                                                    <div class="small text-muted">{{ schedule.indicator.unit }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="small">{{ schedule.indicator.risk.risk_id }}: {{ schedule.indicator.risk.title|truncatewords:6 }}</div>
+                                        </td>
+                                        <td>
+                                            <span class="text-danger fw-semibold">
+                                                <i class="fas fa-calendar-times me-1"></i>
+                                                {{ schedule.scheduled_date|date:"M d, Y" }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-danger">
+                                                {{ overdue_indicators_days_map|get_item:schedule.pk|default:0 }} days
+                                            </span>
+                                        </td>
+                                            <td>
+                                                <span class="badge bg-info text-white">
+                                                    {{ schedule.indicator.get_measurement_period_display }}
+                                                </span>
+                                            </td>
+                                        <td>
+                                            <a href="{% url 'update_schedule' schedule.pk %}" class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-clipboard-check"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- SECTION 2: Pending Assessments -->
+                {% if risks_no_assessment or pending_assessments %}
+                <div id="pending-assessments" class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-warning bg-opacity-10 border-0">
+                        <div class="section-header border-0 pb-0 mb-0">
+                            <h5>
+                                <i class="fas fa-clipboard-list text-warning"></i>
+                                <span>Pending Assessments</span>
+                                <span class="badge bg-warning text-dark ms-2">{{ risks_no_assessment.count }}</span>
+                            </h5>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group-item d-none d-md-block bg-light">
+                            <div class="row">
+                                <div class="col-md-5"><strong>Risk / Item</strong></div>
+                                <div class="col-md-3"><strong>Owner</strong></div>
+                                <div class="col-md-2"><strong>Status / Due</strong></div>
+                                <div class="col-md-2 text-end"><strong>Action</strong></div>
+                            </div>
+                        </div>
+                        <div class="list-group list-group-flush compact-list">
+                            {% for risk in risks_no_assessment %}
+                            <div class="list-group-item action-item" data-category="assessments" data-status="pending">
+                                <div class="row align-items-center">
+                                    <div class="col-md-5">
+                                        <div class="d-flex align-items-start">
+                                            <div class="action-icon icon-urgent me-2 flex-shrink-0">
+                                                <i class="fas fa-clipboard-list"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold">{{ risk.risk_id }}: {{ risk.title }}</div>
+                                                <div class="small text-muted">
+                                                    <i class="fas fa-building me-1"></i> {{ risk.department.name|default:"N/A" }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="small">
+                                            <i class="fas fa-user me-1 text-muted"></i>
+                                            {{ risk.risk_owner.name|default:"Unassigned" }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <span class="status-badge bg-warning bg-opacity-10 text-warning">
+                                            Never Assessed
+                                        </span>
+                                    </div>
+                                    <div class="col-md-2 text-end">
+                                        <a href="{% url 'add_assessment' risk.risk_id %}?force=1" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-plus me-1"></i> Assess
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            
+                            {% for assessment in pending_assessments %}
+                            <div class="list-group-item action-item" data-category="assessments" data-status="pending">
+                                <div class="row align-items-center">
+                                    <div class="col-md-5">
+                                        <div class="d-flex align-items-start">
+                                            <div class="action-icon icon-urgent me-2 flex-shrink-0">
+                                                <i class="fas fa-clipboard-check"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold">{{ assessment.risk.risk_id }}: {{ assessment.risk.title|truncatewords:10 }}</div>
+                                                <div class="small text-muted">Periodic Assessment Due</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="small text-warning">
+                                            <i class="fas fa-clock me-1"></i>
+                                            Due: {{ assessment.due_date|date:"M d, Y" }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="progress progress-slim">
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: 60%"></div>
+                                        </div>
+                                        <small class="text-muted">60% Complete</small>
+                                    </div>
+                                    <div class="col-md-2 text-end">
+                                        <a href="{% url 'add_assessment' assessment.risk.risk_id %}?force=1" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- SECTION 3: Upcoming Reviews & Actions -->
+                {% if assessments_due_soon or upcoming_reviews %}
+                <div id="upcoming-actions" class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-info bg-opacity-10 border-0">
+                        <div class="section-header border-0 pb-0 mb-0">
+                            <h5>
+                                <i class="fas fa-calendar-check text-info"></i>
+                                <span>Upcoming Actions (Next 15 Days)</span>
+                                <span class="badge bg-info ms-2">{{ upcoming_count }}</span>
+                            </h5>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group-item d-none d-md-block bg-light">
+                            <div class="row">
+                                <div class="col-md-5"><strong>Item</strong></div>
+                                <div class="col-md-3"><strong>Risk</strong></div>
+                                <div class="col-md-2"><strong>Due</strong></div>
+                                <div class="col-md-2 text-end"><strong>Action</strong></div>
+                            </div>
+                        </div>
+                        <div class="list-group list-group-flush compact-list">
+                            <!-- Upcoming Indicator Assessments -->
+                            {% for schedule in assessments_due_soon %}
+                            <div class="list-group-item action-item" data-category="indicators" data-status="upcoming">
+                                <div class="row align-items-center">
+                                    <div class="col-md-5">
+                                        <div class="d-flex align-items-start">
+                                            <div class="action-icon icon-upcoming me-2 flex-shrink-0">
+                                                <i class="fas fa-chart-line"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold">{{ schedule.indicator.preferred_kpi_name|default:"Risk Indicator" }}</div>
+                                                <div class="small text-muted">{{ schedule.indicator.risk.risk_id }}: {{ schedule.indicator.risk.title|truncatewords:8 }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="small text-info">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            {{ schedule.scheduled_date|date:"M d, Y" }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <span class="badge bg-info">
+                                            In {{ schedule.days_until_due|default:0 }} days
+                                        </span>
+                                    </div>
+                                    <div class="col-md-2 text-end">
+                                        <a href="{% url 'record_indicator_assessment' schedule.pk %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-arrow-right"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+
+                            <!-- Upcoming Risk Reviews -->
+                            {% for risk in upcoming_reviews %}
+                            <div class="list-group-item action-item" data-category="reviews" data-status="upcoming">
+                                <div class="row align-items-center">
+                                    <div class="col-md-5">
+                                        <div class="d-flex align-items-start">
+                                            <div class="action-icon icon-upcoming me-2 flex-shrink-0">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold">{{ risk.risk_id }}: {{ risk.title|truncatewords:10 }}</div>
+                                                <div class="small text-muted">Periodic Risk Review</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="small text-muted">
+                                            <i class="fas fa-clock me-1"></i>
+                                            Last reviewed: {{ risk_assessment_dates|get_item:risk.pk|default:"Never" }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <span class="status-badge bg-info bg-opacity-10 text-info">
+                                            Review Due
+                                        </span>
+                                    </div>
+                                    <div class="col-md-2 text-end">
+                                        <a href="{% url 'add_assessment' risk.risk_id %}?force=1" class="btn btn-sm btn-info">
+                                            <i class="fas fa-clipboard-check"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- SECTION 4: Mitigation Target Date Status -->
+                {% if upcoming_mitigations or at_risk_mitigations %}
+                <div id="mitigation-target-dates" class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-light border-0">
+                        <div class="section-header border-0 pb-0 mb-0">
+                            <h5>
+                                <i class="fas fa-tasks text-primary"></i>
+                                <span>Mitigation Target Dates</span>
+                                <span class="badge bg-secondary ms-2">{{ upcoming_mitigations.count|add:at_risk_mitigations.count }}</span>
+                            </h5>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col">Mitigation Action</th>
+                                        <th scope="col">Risk</th>
+                                        <th scope="col">Responsible</th>
+                                        <th scope="col" class="sortable-header" onclick="sortTable(this, 3)">Target / Progress</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- At-Risk Mitigations -->
+                                    {% for mitigation in at_risk_mitigations %}
+                                    <tr class="action-item action-card at-risk" data-category="mitigations" data-status="at-risk">
+                                        <td>
+                                            <div class="d-flex align-items-start">
+                                                <span class="priority-indicator priority-medium"></span>
+                                                <div>
+                                                    <div class="fw-semibold">{{ mitigation.action|truncatewords:8 }}</div>
+                                                    <div class="small text-muted">{{ mitigation.description|truncatewords:6 }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="small">{{ mitigation.risk.risk_id }}: {{ mitigation.risk.title|truncatewords:6 }}</div>
+                                        </td>
+                                        <td>
+                                            <div class="small">
+                                                <i class="fas fa-user me-1 text-muted"></i>
+                                                {{ mitigation.responsible_person.name|default:"Unassigned" }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="text-warning d-flex align-items-center">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                                    <span>{{ mitigation.due_date|date:"M d, Y" }}</span>
+                                                </div>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="progress progress-slim me-2" style="width:120px;">
+                                                        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ mitigation.progress|default:50 }}%;" aria-valuenow="{{ mitigation.progress|default:50 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                                    </div>
+                                                    <small class="text-muted">{{ mitigation.progress|default:50 }}%</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="status-badge bg-warning bg-opacity-10 text-warning">
+                                                At Risk
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'risk_detail' risk_id=mitigation.risk.risk_id %}" class="btn btn-sm btn-outline-warning">
+                                                <i class="fas fa-arrow-right"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+
+                                    <!-- Upcoming Mitigations (On Track) -->
+                                    {% for mitigation in upcoming_mitigations %}
+                                    <tr class="action-item action-card scheduled" data-category="mitigations" data-status="scheduled">
+                                        <td>
+                                            <div class="d-flex align-items-start">
+                                                <span class="priority-indicator priority-low"></span>
+                                                <div>
+                                                    <div class="fw-semibold">{{ mitigation.action|truncatewords:8 }}</div>
+                                                    <div class="small text-muted">{{ mitigation.description|truncatewords:6 }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="small">{{ mitigation.risk.risk_id }}: {{ mitigation.risk.title|truncatewords:6 }}</div>
+                                        </td>
+                                        <td>
+                                            <div class="small">
+                                                <i class="fas fa-user me-1 text-muted"></i>
+                                                {{ mitigation.responsible_person.name|default:"Unassigned" }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="text-success d-flex align-items-center">
+                                                    <i class="fas fa-calendar-check me-1"></i>
+                                                    <span>{{ mitigation.due_date|date:"M d, Y" }}</span>
+                                                </div>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="progress progress-slim me-2" style="width:120px;">
+                                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ mitigation.progress|default:75 }}%;" aria-valuenow="{{ mitigation.progress|default:75 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                                    </div>
+                                                    <small class="text-muted">{{ mitigation.progress|default:75 }}%</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="status-badge bg-success bg-opacity-10 text-success">
+                                                On Track
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'risk_detail' risk_id=mitigation.risk.risk_id %}" class="btn btn-sm btn-outline-success">
+                                                <i class="fas fa-check"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- SECTION 5: Breached Indicators -->
+                {% if breached_indicators %}
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-danger bg-opacity-10 border-0">
+                        <div class="section-header border-0 pb-0 mb-0">
+                            <h5>
+                                <i class="fas fa-exclamation-circle text-danger"></i>
+                                <span>Breached Risk Indicators</span>
+                                <span class="badge bg-danger ms-2">{{ breached_indicators|length }}</span>
+                            </h5>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group-item d-none d-md-block bg-light">
+                            <div class="row">
+                                <div class="col-md-4"><strong>Indicator</strong></div>
+                                <div class="col-md-3"><strong>Value / Threshold</strong></div>
+                                <div class="col-md-3"><strong>Measured</strong></div>
+                                <div class="col-md-2 text-end"><strong>Action</strong></div>
+                            </div>
+                        </div>
+                        <div class="list-group list-group-flush compact-list">
+                            {% for measurement in breached_indicators %}
+                            <div class="list-group-item action-item action-card overdue" data-category="indicators" data-status="breached">
+                                <div class="row align-items-center">
+                                    <div class="col-md-4">
+                                        <div class="d-flex align-items-start">
+                                            <div class="action-icon icon-overdue me-2 flex-shrink-0">
+                                                <i class="fas fa-chart-line"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold">{{ measurement.indicator.preferred_kpi_name }}</div>
+                                                <div class="small text-muted">{{ measurement.indicator.risk.risk_id }}: {{ measurement.indicator.risk.title|truncatewords:6 }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="small text-danger">
+                                            <i class="fas fa-arrow-up me-1"></i>
+                                            <strong>{{ measurement.value }}</strong> {{ measurement.indicator.unit }}
+                                            <div class="text-muted">Threshold: {{ measurement.indicator.breach_threshold }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="small text-muted">
+                                            <i class="fas fa-clock me-1"></i>
+                                            Measured: {{ measurement.measured_at|date:"M d, Y" }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 text-end">
+                                        <a href="{% url 'risk_detail' risk_id=measurement.indicator.risk.risk_id %}" class="btn btn-sm btn-danger">
+                                            <i class="fas fa-eye"></i> Review
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Empty State -->
+                {% if not overdue_mitigations and not risks_no_assessment and not assessments_due_soon and not breached_indicators and not upcoming_reviews and not upcoming_mitigations and not at_risk_mitigations and not overdue_indicators %}
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="empty-state">
+                            <i class="fas fa-check-circle text-success"></i>
+                            <h5 class="text-muted">No Actions Required</h5>
+                            <p class="text-muted mb-0">All tasks are up to date. Great work!</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+    <style media="print">
+        /* Hide interactive/navigation elements */
+        .navbar, .sidebar, .btn, .filter-chip, .dropdown, .nav, [onclick], .pagination, .page-link, .breadcrumb {
+            display: none !important;
+        }
+
+        /* Make cards simple blocks and avoid breaking inside them */
+        .card {
+            page-break-inside: avoid;
+            box-shadow: none !important;
+            border: 1px solid #ddd;
+            margin-bottom: 12px;
+        }
+
+        /* Ensure tables print fully and clearly */
+        .table-responsive { overflow: visible !important; }
+        table.table { width: 100% !important; border-collapse: collapse !important; }
+        table.table thead { background: #f4f4f4 !important; -webkit-print-color-adjust: exact; }
+        table.table th, table.table td { border: 1px solid #222 !important; padding: 6px !important; vertical-align: middle; }
+        table.table tbody tr { page-break-inside: avoid; }
+
+        /* List-group items become simple blocks */
+        .list-group-item { display: block !important; border-bottom: 1px solid #e9e9e9; padding: 8px 10px; }
+
+        /* Reduce font size slightly for print to fit more content */
+        body { color: #000; background: #fff; font-size: 12px; }
+
+        /* Show link URLs in parens after link text */
+        a[href]:after { content: " (" attr(href) ")"; font-size: 90%; }
+
+        /* Ensure progress bars render as simple text (colors may not print reliably) */
+        .progress, .progress-bar { background: #eee !important; }
+
+        /* Avoid orphaned rows across pages */
+        tr { page-break-inside: avoid; }
+    </style>
+
+    <!-- Bootstrap & Popper JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+
+    {% endblock %}
+    {% block extra_scripts %}
+    <script>
+        // Filter chip functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterChips = document.querySelectorAll('.filter-chip');
+            
+            filterChips.forEach(chip => {
+                chip.addEventListener('click', function() {
+                    const filter = this.getAttribute('data-filter');
+                    
+                    // Toggle active state
+                    if (filter === 'all') {
+                        filterChips.forEach(c => c.classList.remove('active'));
+                        this.classList.add('active');
+                        showAllItems();
+                    } else {
+                        document.querySelector('[data-filter="all"]').classList.remove('active');
+                        this.classList.toggle('active');
+                        filterItems();
+                    }
+                });
+            });
+        });
+
+        function filterItems() {
+            const activeFilters = Array.from(document.querySelectorAll('.filter-chip.active'))
+                .map(chip => chip.getAttribute('data-filter'))
+                .filter(f => f !== 'all');
+            
+            const allItems = document.querySelectorAll('.action-item');
+            
+            if (activeFilters.length === 0) {
+                showAllItems();
+                return;
+            }
+            
+            allItems.forEach(item => {
+                const category = item.getAttribute('data-category');
+                if (activeFilters.includes(category)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        function showAllItems() {
+            document.querySelectorAll('.action-item').forEach(item => {
+                item.style.display = '';
+            });
+        }
+
+        // Sidebar filter checkboxes
+        document.querySelectorAll('input[type="checkbox"][id^="filter"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const status = this.id.replace('filter', '').toLowerCase();
+                const items = document.querySelectorAll(`[data-status="${status}"]`);
+                
+                items.forEach(item => {
+                    item.closest('.card, .list-group-item, tr').style.display = 
+                        this.checked ? '' : 'none';
+                });
+            });
+        });
+
+        // Sort table functionality
+        function sortTable(header, columnIndex) {
+            const table = header.closest('table');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            const isAscending = !header.classList.contains('asc');
+            
+            // Remove sort classes from all headers
+            table.querySelectorAll('.sortable-header').forEach(h => {
+                h.classList.remove('asc', 'desc');
+            });
+            
+            // Add appropriate class
+            header.classList.add(isAscending ? 'asc' : 'desc');
+            
+            rows.sort((a, b) => {
+                const aValue = a.cells[columnIndex].textContent.trim();
+                const bValue = b.cells[columnIndex].textContent.trim();
+                
+                // Try to parse as date
+                const aDate = new Date(aValue);
+                const bDate = new Date(bValue);
+                
+                if (!isNaN(aDate) && !isNaN(bDate)) {
+                    return isAscending ? aDate - bDate : bDate - aDate;
+                }
+                
+                // Default to string comparison
+                return isAscending ? 
+                    aValue.localeCompare(bValue) : 
+                    bValue.localeCompare(aValue);
+            });
+            
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        // Refresh actions
+        function refreshActions() {
+            const btn = event.target.closest('button');
+            const icon = btn.querySelector('i');
+            
+            icon.classList.remove('fa-sync-alt');
+            icon.classList.add('fa-spinner', 'fa-spin');
+            
+            setTimeout(() => {
+                location.reload();
+            }, 800);
+        }
+
+        // Set view
+        function setView(view) {
+            const filterChips = document.querySelectorAll('.filter-chip');
+            const allItems = document.querySelectorAll('.action-item');
+            
+            filterChips.forEach(chip => chip.classList.remove('active'));
+            
+            switch(view) {
+                case 'overdue':
+                    allItems.forEach(item => {
+                        item.style.display = item.getAttribute('data-status') === 'overdue' ? '' : 'none';
+                    });
+                    break;
+                case 'upcoming':
+                    allItems.forEach(item => {
+                        item.style.display = item.getAttribute('data-status') === 'upcoming' ? '' : 'none';
+                    });
+                    break;
+                case 'mytasks':
+                    // This would filter by current user - placeholder
+                    alert('Filter by My Tasks - implementation depends on backend');
+                    break;
+                default:
+                    showAllItems();
+                    document.querySelector('[data-filter="all"]').classList.add('active');
+            }
+        }
+
+        // Export actions
+        function exportActions() {
+            alert('Export functionality - would generate CSV/Excel file');
+        }
+
+        // Print actions
+        function printActions() {
+            window.print();
+        }
+
+        // Add custom Django template filter helper (if needed in JS)
+        function getItem(dict, key) {
+            return dict[key] || '';
+        }
+    </script>
+    {% endblock %}

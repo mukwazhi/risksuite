@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RiskSuite - Risk Details</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <style>
+        /* Django admin font stack and sizing */
+        :root{
+            --admin-font-size: 13px;
+            --admin-line-height: 1.4;
+            --admin-input-vertical: 6px;
+            --admin-input-horizontal: 8px;
+            --admin-radius: 3px;
+        }
+
+        html, body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+                         "Noto Sans", "Liberation Sans", sans-serif;
+            font-size: var(--admin-font-size);
+            line-height: var(--admin-line-height);
+            color: #222;
+            background-color: #f8f9fa;
+        }
+
+        h1,h2,h3,h4,h5,h6 {
+            font-weight: 600;
+            line-height: 1.25;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            color: #111;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+        }
+
+        .card-header {
+            background: #fff;
+            border-bottom: 1px solid #e9ecef;
+            padding-top: .75rem;
+            padding-bottom: .75rem;
+        }
+
+        .info-item {
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 13px;
+            color: #111;
+            margin-bottom: .35rem;
+        }
+
+        .help-text, .small.text-muted {
+            color: #6c757d;
+            font-size: 12px;
+        }
+
+        .badge {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .nav-pills .nav-link {
+            font-size: 13px;
+            color: #495057;
+            border-radius: 4px;
+        }
+        .nav-pills .nav-link.active {
+            background-color: #0d6efd;
+            color: #fff;
+        }
+
+        .table th {
+            border-top: none;
+            font-weight: 600;
+            font-size: 13px;
+            color: #495057;
+        }
+
+        .risk-matrix-cell {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 1rem;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .status-ok { background-color: #d4edda; color: #155724; }
+        .status-caution { background-color: #fff3cd; color: #856404; }
+        .status-breached { background-color: #f8d7da; color: #721c24; }
+        .status-inactive { background-color: #e9ecef; color: #6c757d; }
+
+        .status-pending { background-color: #fff3cd; color: #856404; }
+        .status-completed { background-color: #d4edda; color: #155724; }
+        .status-overdue { background-color: #f8d7da; color: #721c24; }
+        .status-skipped { background-color: #e9ecef; color: #6c757d; }
+
+        .trend-improving { color: #28a745; }
+        .trend-stable { color: #6c757d; }
+        .trend-deteriorating { color: #dc3545; }
+        .trend-new { color: #007bff; }
+
+        .text-muted small, small { font-size: 12px; }
+        
+        /* Collapsible assessment card styling */
+        [data-bs-toggle="collapse"] .fa-chevron-down {
+            transition: transform 0.3s ease;
+        }
+        [data-bs-toggle="collapse"][aria-expanded="true"] .fa-chevron-down {
+            transform: rotate(180deg);
+        }
+        [data-bs-toggle="collapse"]:hover {
+            background-color: #f8f9fa;
+        }
+
+        @media (max-width: 991px) {
+            .col-lg-2.d-none.d-lg-block { display: none !important; }
+        }
+
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .table tbody tr:hover:not(.table-active) {
+            background-color: #f8f9fa;
+            transform: translateX(2px);
+        }
+
+        .table-active {
+            background-color: #e3f2fd !important;
+            border-left: 4px solid #2196F3;
+        }
+
+        .bg-light {
+            background-color: #f8f9fa !important;
+            border-left: 3px solid #6c757d;
+        }
+
+        /* Risk header description styling and increased content padding */
+        .risk-header .risk-description {
+            margin-top: 0.35rem;
+            color: #495057;
+            font-size: 1rem;
+            max-width: 100%;
+            white-space: normal;
+        }
+
+        .content-padding {
+            padding-left: 2.5rem !important;
+            padding-right: 2.5rem !important;
+        }
+    </style>
+</head>
+<body>
+    {% load math_extras %}
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary border-bottom">
+        <div class="container-fluid">
+                <a class="navbar-brand fw-bold d-flex align-items-center" href="#">
+                <i class="fas fa-shield-alt me-2"></i>
+                RiskSuite
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'dashboard' %}">
+                            <i class="fas fa-home me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'all_risks' %}">
+                            <i class="fas fa-list-alt me-1"></i> Risk Register
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-chart-bar me-1"></i> Reports
+                        </a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <div class="dropdown">
+                        <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-2 fs-5"></i>
+                            <span class="d-none d-sm-inline">{{ request.user.get_full_name|default:request.user.username }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Profile</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i> Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i> Sign Out</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-3">
+        <div class="row">
+            <!-- Sidebar (match My Dashboard restricted sidebar) -->
+            <div class="col-lg-3 d-none d-lg-block bg-light border-end p-3">
+                <div class="d-flex flex-column align-items-start mb-3">
+                    <h6 class="text-uppercase text-muted fw-bold small">Navigation</h6>
+                    <span class="nav-link active mt-2">
+                        <i class="fas fa-tachometer-alt me-2"></i> My Dashboard
+                    </span>
+                    <a class="btn btn-sm btn-outline-danger mt-3" href="{% url 'logout' %}">
+                        <i class="fas fa-sign-out-alt me-1"></i> Sign Out
+                    </a>
+                </div>
+                <div class="alert alert-info mt-4" role="alert">
+                    <i class="fas fa-lock me-2"></i>
+                    <strong>Restricted Access:</strong> You are limited to this dashboard only.
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-lg-9 px-4">
+                <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
+                    <div>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                                <li class="breadcrumb-item"><a href="{% url 'all_risks' %}">All Risks</a></li>
+                                <li class="breadcrumb-item active">Risk Details</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <div>
+                        <a href="{% url 'download_risk_report' risk_id=risk.risk_id %}" class="btn btn-success btn-sm" target="_blank">
+                            <i class="fas fa-file-pdf me-2"></i> Download PDF Report
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Risk Header -->
+                        <div class="risk-header mb-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="mb-2">{{ risk.title }}</h2>
+                            <div class="d-flex flex-wrap gap-3">
+                                <span class="badge bg-light text-dark fs-6">{{ risk.risk_id }}</span>
+                                {% if assessments %}
+                                    {% with current_assessment=assessments.0 %}
+                                    {% with score=current_assessment.risk_score %}
+                                    {% if score >= 20 %}
+                                    <span class="badge bg-danger fs-6">Critical Priority</span>
+                                    {% elif score >= 15 %}
+                                    <span class="badge bg-danger fs-6">High Priority</span>
+                                    {% elif score >= 8 %}
+                                    <span class="badge bg-warning fs-6">Medium Priority</span>
+                                    {% else %}
+                                    <span class="badge bg-success fs-6">Low Priority</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                    {% endwith %}
+                                {% else %}
+                                    {% if risk.risk_rating >= 20 %}
+                                    <span class="badge bg-danger fs-6">Critical Priority</span>
+                                    {% elif risk.risk_rating >= 15 %}
+                                    <span class="badge bg-danger fs-6">High Priority</span>
+                                    {% elif risk.risk_rating >= 8 %}
+                                    <span class="badge bg-warning fs-6">Medium Priority</span>
+                                    {% else %}
+                                    <span class="badge bg-success fs-6">Low Priority</span>
+                                    {% endif %}
+                                {% endif %}
+                                {% if risk.is_approved %}
+                                <span class="badge bg-success fs-6">Approved</span>
+                                {% elif risk.park_risk %}
+                                <span class="badge bg-secondary fs-6">Draft</span>
+                                {% else %}
+                                <span class="badge bg-warning fs-6">Pending</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            {% if assessments %}
+                                {% with current_assessment=assessments.0 %}
+                                {% with score=current_assessment.risk_score %}
+                                <div class="fs-1 fw-bold {% if score >= 20 %}text-danger{% elif score >= 15 %}text-danger{% elif score >= 8 %}text-warning{% else %}text-success{% endif %}">
+                                    {{ score }}
+                                </div>
+                                {% endwith %}
+                                {% endwith %}
+                            {% else %}
+                                <div class="fs-1 fw-bold {% if risk.risk_rating >= 20 %}text-danger{% elif risk.risk_rating >= 15 %}text-danger{% elif risk.risk_rating >= 8 %}text-warning{% else %}text-success{% endif %}">
+                                    {{ risk.risk_rating }}
+                                </div>
+                            {% endif %}
+                            <div class="fs-6">Risk Score</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Risk Details Tabs -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-bottom-0 pt-3">
+                        <ul class="nav nav-pills mb-3" id="riskTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="overview-tab" data-bs-toggle="pill" data-bs-target="#overview" type="button" role="tab">
+                                    <i class="fas fa-info-circle me-2"></i> Overview
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="assessments-tab" data-bs-toggle="pill" data-bs-target="#assessments" type="button" role="tab">
+                                    <i class="fas fa-history me-2"></i> Assessments
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="mitigations-tab" data-bs-toggle="pill" data-bs-target="#mitigations" type="button" role="tab">
+                                    <i class="fas fa-shield-alt me-2"></i> Mitigations
+                                    {% if total_mitigations > 0 %}
+                                    <span class="badge bg-primary ms-1">{{ total_mitigations }}</span>
+                                    {% endif %}
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="riskTabContent">
+                            <!-- Assessments Tab Pane (moved here so it's a sibling of Overview) -->
+                            <div class="tab-pane fade" id="assessments" role="tabpanel">
+                                {% if assessments %}
+                                <div class="list-group">
+                                    {% for a in assessments %}
+                                    <div class="list-group-item">
+                                            <div class="d-flex w-100 justify-content-between align-items-start">
+                                                <div>
+                                                    <div class="fw-bold">
+                                                        <a href="{% url 'risk_assessment_detail' a.id %}" class="text-decoration-none">{% if a.get_assessment_type_display %}{{ a.get_assessment_type_display }}{% else %}Assessment{% endif %}</a>
+                                                    </div>
+                                                    <div class="small text-muted">{% if a.assessment_date %}{{ a.assessment_date|date:"M d, Y" }}{% elif a.created_at %}{{ a.created_at|date:"M d, Y" }}{% endif %}{% if a.created_by %} • {% if a.created_by.get_full_name %}{{ a.created_by.get_full_name }}{% else %}{{ a.created_by.username }}{% endif %}{% endif %}</div>
+                                                </div>
+                                                <div class="text-end">
+                                                    <div class="fs-4 fw-bold">{{ a.risk_score|default:'—' }}</div>
+                                                    <div class="small text-muted">Score</div>
+                                                    <div class="mt-2">
+                                                        <a href="{% url 'risk_assessment_detail' a.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% if a.summary %}
+                                        <div class="mt-2 small text-muted">{{ a.summary|linebreaksbr }}</div>
+                                        {% elif a.notes %}
+                                        <div class="mt-2 small text-muted">{{ a.notes|linebreaksbr }}</div>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <div class="text-center text-muted py-4">No assessments recorded for this risk.</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Mitigations Tab Pane (moved here so it's a sibling of Overview) -->
+                            <div class="tab-pane fade" id="mitigations" role="tabpanel">
+                                {% if mitigations %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Action</th>
+                                                <th style="width:18%">Responsible</th>
+                                                <th style="width:12%">Due</th>
+                                                <th style="width:12%">Status</th>
+                                                <th style="width:18%">Progress</th>
+                                                <th style="width:8%">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for m in mitigations %}
+                                            <tr>
+                                                <td>{{ m.action|truncatechars:120 }}</td>
+                                                <td>{% if m.responsible_person %}{% if m.responsible_person.get_full_name %}{{ m.responsible_person.get_full_name }}{% else %}{{ m.responsible_person.username }}{% endif %}{% else %}&mdash;{% endif %}</td>
+                                                <td>{% if m.due_date %}{{ m.due_date|date:"M d, Y" }}{% else %}&mdash;{% endif %}</td>
+                                                <td>
+                                                    {% if m.status %}
+                                                        <span class="badge {% if m.status == 'complete' %}bg-success{% elif m.is_overdue %}bg-danger{% else %}bg-warning text-dark{% endif %}">{{ m.get_status_display|default:m.status }}</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">Unknown</span>
+                                                    {% endif %}
+                                                </td>
+                                                                <td>
+                                                                    {% if m.completion_percent %}
+                                                                        <div class="progress" style="height:12px;">
+                                                                            <div class="progress-bar" role="progressbar" style="width: {{ m.completion_percent }}%">{{ m.completion_percent }}%</div>
+                                                                        </div>
+                                                                    {% else %}
+                                                                        <small class="text-muted">No progress recorded</small>
+                                                                    {% endif %}
+                                                                </td>
+                                                                <td>
+                                                                    <a href="{% url 'mitigation_progress_trail' m.id %}" class="btn btn-sm btn-outline-secondary" title="Progress history">
+                                                                        <i class="fas fa-history"></i>
+                                                                    </a>
+                                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <div class="text-center text-muted py-4">No mitigations recorded for this risk.</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Overview Tab -->
+                            <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-12">
+                                        
+                                        <!-- Inherent Risk, Controls, and Residual Risk Section -->
+                                        {% if risk.inherent_likelihood and risk.inherent_impact %}
+                                        <!-- Summary Cards Row - Top Position -->
+                                        <div class="row g-2 mb-4 mt-4">
+                                                    <!-- Inherent Risk Card -->
+                                                    <div class="col-md-3 col-sm-6">
+                                                        {% with score=risk.inherent_risk_score %}
+                                                        <div class="card h-100 {% if score >= 20 %}border-danger{% elif score >= 15 %}border-danger{% elif score >= 8 %}border-warning{% else %}border-success{% endif %}">
+                                                            <div class="card-body text-center py-3">
+                                                                <div class="text-muted" style="font-size: 11px; font-weight: 600;">
+                                                                    <i class="fas fa-exclamation-triangle me-1"></i>INHERENT RISK
+                                                                </div>
+                                                                <div class="fs-2 fw-bold {% if score >= 20 %}text-danger{% elif score >= 15 %}text-danger{% elif score >= 8 %}text-warning{% else %}text-success{% endif %} my-2">
+                                                                    {{ score }}
+                                                                </div>
+                                                                <div style="font-size: 11px;" class="text-muted">
+                                                                    L: {{ risk.inherent_likelihood }} × I: {{ risk.inherent_impact }}
+                                                                </div>
+                                                                <div class="mt-2">
+                                                                    <span class="badge {% if score >= 20 %}bg-danger{% elif score >= 15 %}bg-danger{% elif score >= 8 %}bg-warning text-dark{% else %}bg-success{% endif %}" style="font-size: 10px;">Before Controls</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {% endwith %}
+                                                    </div>
+                                                    
+                                                    <!-- Controls Summary Card -->
+                                                    <div class="col-md-3 col-sm-6">
+                                                        <div class="card border-primary h-100">
+                                                            <div class="card-body text-center py-3">
+                                                                <div class="text-muted" style="font-size: 11px; font-weight: 600;">
+                                                                    <i class="fas fa-shield-alt me-1"></i>ACTIVE CONTROLS
+                                                                </div>
+                                                                <div class="fs-2 fw-bold text-primary my-2">
+                                                                    {{ controls.count }}
+                                                                </div>
+                                                                {% if residual_risk_data %}
+                                                                <div style="font-size: 11px;" class="text-muted mb-1">
+                                                                    Avg: {{ residual_risk_data.control_effectiveness }}%
+                                                                </div>
+                                                                <div class="progress" style="height: 6px;">
+                                                                    <div class="progress-bar bg-primary" role="progressbar" 
+                                                                         style="width: {{ residual_risk_data.control_effectiveness }}%"></div>
+                                                                </div>
+                                                                {% else %}
+                                                                <div style="font-size: 11px;" class="text-muted">
+                                                                    Mitigating Risk
+                                                                </div>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Post Control Residual Risk Card -->
+                                                    <div class="col-md-3 col-sm-6">
+                                                        {% if residual_risk_data %}
+                                                            {% if residual_risk_data.residual_score >= 20 %}
+                                                        <div class="card border-danger h-100">
+                                                            <div class="card-body text-center py-3">
+                                                                <div class="text-muted" style="font-size: 11px; font-weight: 600;">
+                                                                    <i class="fas fa-calculator me-1"></i>POST CONTROL RESIDUAL
+                                                                </div>
+                                                                <div class="fs-2 fw-bold text-danger my-2">
+                                                                    {{ residual_risk_data.residual_score }}
+                                                                </div>
+                                                                <div style="font-size: 11px;" class="text-muted">
+                                                                    L: {{ residual_risk_data.residual_likelihood }} × I: {{ residual_risk_data.residual_impact }}
+                                                                </div>
+                                                                <div class="mt-2">
+                                                                    <span class="badge bg-danger" style="font-size: 10px;">
+                                                                        <i class="fas fa-arrow-down me-1"></i>{{ residual_risk_data.risk_reduction_pct }}% Reduction
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                            {% elif residual_risk_data.residual_score >= 15 %}
+                                                        <div class="card border-danger h-100">
+                                                            <div class="card-body text-center py-3">
+                                                                <div class="text-muted" style="font-size: 11px; font-weight: 600;">
+                                                                    <i class="fas fa-calculator me-1"></i>POST CONTROL RESIDUAL
+                                                                </div>
+                                                                <div class="fs-2 fw-bold text-danger my-2">
+                                                                    {{ residual_risk_data.residual_score }}
+                                                                </div>
+                                                                <div style="font-size: 11px;" class="text-muted">
+                                                                    L: {{ residual_risk_data.residual_likelihood }} × I: {{ residual_risk_data.residual_impact }}
+                                                                </div>
+                                                                <div class="mt-2">
+                                                                    <span class="badge bg-danger" style="font-size: 10px;">
+                                                                        <i class="fas fa-arrow-down me-1"></i>{{ residual_risk_data.risk_reduction_pct }}% Reduction
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                            {% elif residual_risk_data.residual_score >= 8 %}
+                                                        <div class="card border-warning h-100">
+                                                            <div class="card-body text-center py-3">
+                                                                <div class="text-muted" style="font-size: 11px; font-weight: 600;">
+                                                                    <i class="fas fa-calculator me-1"></i>POST CONTROL RESIDUAL
+                                                                </div>
+                                                                <div class="fs-2 fw-bold text-warning my-2">
+                                                                    {{ residual_risk_data.residual_score }}
+                                                                </div>
+                                                                <div style="font-size: 11px;" class="text-muted">
+                                                                    L: {{ residual_risk_data.residual_likelihood }} × I: {{ residual_risk_data.residual_impact }}
+                                                                </div>
+                                                                <div class="mt-2">
+                                                                    <span class="badge bg-warning text-dark" style="font-size: 10px;">
+                                                                        <i class="fas fa-arrow-down me-1"></i>{{ residual_risk_data.risk_reduction_pct }}% Reduction
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                            {% else %}
+                                                        <div class="card border-success h-100">
+                                                            <div class="card-body text-center py-3">
+                                                                <div class="text-muted" style="font-size: 11px; font-weight: 600;">
+                                                                    <i class="fas fa-calculator me-1"></i>POST CONTROL RESIDUAL
+                                                                </div>
+                                                                <div class="fs-2 fw-bold text-success my-2">
+                                                                    {{ residual_risk_data.residual_score }}
+                                                                </div>
+                                                                <div style="font-size: 11px;" class="text-muted">
+                                                                    L: {{ residual_risk_data.residual_likelihood }} × I: {{ residual_risk_data.residual_impact }}
+                                                                </div>
+                                                                <div class="mt-2">
+                                                                    <span class="badge bg-success" style="font-size: 10px;">
+                                                                        <i class="fas fa-arrow-down me-1"></i>{{ residual_risk_data.risk_reduction_pct }}% Reduction
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                            {% endif %}
+                                                        {% else %}
+                                                        <div class="card border-secondary h-100">
+                                                            <div class="card-body text-center py-3">
+                                                                <div class="text-muted" style="font-size: 11px; font-weight: 600;">
+                                                                    <i class="fas fa-calculator me-1"></i>POST CONTROL RESIDUAL
+                                                                </div>
+                                                                <div class="fs-2 fw-bold text-muted my-2">
+                                                                    {{ risk.risk_score }}
+                                                                </div>
+                                                                <div style="font-size: 11px;" class="text-muted">
+                                                                    Current Level
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {% endif %}
+                                                    </div>
+                                                    
+                                                    <!-- Assessed/Current Residual Risk Card -->
+                                                    <div class="col-md-3 col-sm-6">
+                                                        {% if risk.risk_score >= 20 %}
+                                                        <div class="card border-danger h-100">
+                                                            <div class="card-body text-center py-3">
+                                                                <div class="text-muted" style="font-size: 11px; font-weight: 600;">
+                                                                    <i class="fas fa-chart-line me-1"></i>ASSESSED/CURRENT
+                                                                </div>
+                                                                <div class="fs-2 fw-bold text-danger my-2">
+                                                                    {{ risk.risk_score }}
+                                                                </div>
+                                                                <div style="font-size: 11px;" class="text-muted">
+                                                                    L: {{ risk.likelihood }} × I: {{ risk.impact }}
+                                                                </div>
+                                                                <div class="mt-2">
+                                                                    <span class="badge bg-danger" style="font-size: 10px;">Critical</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {% elif risk.risk_score >= 15 %}
+                                                        <div class="card border-danger h-100">
+                                                            <div class="card-body text-center py-3">
+                                                                <div class="text-muted" style="font-size: 11px; font-weight: 600;">
+                                                                    <i class="fas fa-chart-line me-1"></i>ASSESSED/CURRENT
+                                                                </div>
+                                                                <div class="fs-2 fw-bold text-danger my-2">
+                                                                    {{ risk.risk_score }}
+                                                                </div>
+                                                                <div style="font-size: 11px;" class="text-muted">
+                                                                    L: {{ risk.likelihood }} × I: {{ risk.impact }}
+                                                                </div>
+                                                                <div class="mt-2">
+                                                                    <span class="badge bg-danger" style="font-size: 10px;">High</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {% elif risk.risk_score >= 8 %}
+                                                        <div class="card border-warning h-100">
+                                                            <div class="card-body text-center py-3">
+                                                                <div class="text-muted" style="font-size: 11px; font-weight: 600;">
+                                                                    <i class="fas fa-chart-line me-1"></i>ASSESSED/CURRENT
+                                                                </div>
+                                                                <div class="fs-2 fw-bold text-warning my-2">
+                                                                    {{ risk.risk_score }}
+                                                                </div>
+                                                                <div style="font-size: 11px;" class="text-muted">
+                                                                    L: {{ risk.likelihood }} × I: {{ risk.impact }}
+                                                                </div>
+                                                                <div class="mt-2">
+                                                                    <span class="badge bg-warning text-dark" style="font-size: 10px;">Medium</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {% else %}
+                                                        <div class="card border-success h-100">
+                                                            <div class="card-body text-center py-3">
+                                                                <div class="text-muted" style="font-size: 11px; font-weight: 600;">
+                                                                    <i class="fas fa-chart-line me-1"></i>ASSESSED/CURRENT
+                                                                </div>
+                                                                <div class="fs-2 fw-bold text-success my-2">
+                                                                    {{ risk.risk_score }}
+                                                                </div>
+                                                                <div style="font-size: 11px;" class="text-muted">
+                                                                    L: {{ risk.likelihood }} × I: {{ risk.impact }}
+                                                                </div>
+                                                                <div class="mt-2">
+                                                                    <span class="badge bg-success" style="font-size: 10px;">Low</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <!-- Risk Description Card -->
+                                        <div class="card border-0 bg-light {% if risk.inherent_likelihood and risk.inherent_impact %}mt-4{% endif %}">
+                                            <div class="card-body">
+                                                <h5 class="card-title mb-3">Risk Description</h5>
+                                                <div>{{ risk.description|default:"No description provided"|linebreaks }}</div>
+                                                
+                                                <h5 class="card-title mt-4 mb-3">Cause</h5>
+                                                <div>{{ risk.cause|default:"No cause provided"|linebreaks }}</div>
+                                                
+                                                <h5 class="card-title mt-4 mb-3">Business Impact</h5>
+                                                <div>{{ risk.impact_description|default:"No impact description provided"|linebreaks }}</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Cross-Category Impact Analysis -->
+                                        {% if risk.category_impacts.exists %}
+                                        <div class="card border-0 mt-4">
+                                            <div class="card-body">
+                                                <h5 class="card-title mb-3">
+                                                    <i class="fas fa-layer-group me-2 text-primary"></i>Cross-Category Impact Analysis
+                                                </h5>
+                                                <p class="text-muted small mb-3">This risk affects multiple categories with varying severity levels:</p>
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm table-hover align-middle">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th>Category</th>
+                                                                <th class="text-center">Impact</th>
+                                                                <th class="text-center">Likelihood</th>
+                                                                <th class="text-center">Score</th>
+                                                                <th class="text-center">Rating</th>
+                                                                <th>Impact Notes</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr>
+                                                                <td>
+                                                                    {% if risk.risk_score >= 20 %}
+                                                                    <span class="badge bg-danger">{{ risk.category.name }}</span>
+                                                                    {% elif risk.risk_score >= 15 %}
+                                                                    <span class="badge bg-danger">{{ risk.category.name }}</span>
+                                                                    {% elif risk.risk_score >= 8 %}
+                                                                    <span class="badge bg-warning text-dark">{{ risk.category.name }}</span>
+                                                                    {% else %}
+                                                                    <span class="badge bg-success">{{ risk.category.name }}</span>
+                                                                    {% endif %}
+                                                                    <small class="text-muted">(Primary)</small>
+                                                                </td>
+                                                                <td class="text-center">{{ risk.impact }}</td>
+                                                                <td class="text-center">{{ risk.likelihood }}</td>
+                                                                <td class="text-center fw-bold">{{ risk.risk_score }}</td>
+                                                                <td class="text-center">
+                                                                    {% if risk.risk_score >= 20 %}
+                                                                    <span class="badge bg-danger">Critical</span>
+                                                                    {% elif risk.risk_score >= 15 %}
+                                                                    <span class="badge bg-danger">High</span>
+                                                                    {% elif risk.risk_score >= 8 %}
+                                                                    <span class="badge bg-warning text-dark">Medium</span>
+                                                                    {% else %}
+                                                                    <span class="badge bg-success">Low</span>
+                                                                    {% endif %}
+                                                                </td>
+                                                                <td class="small text-muted">{{ risk.impact_description|truncatewords:10 }}</td>
+                                                            </tr>
+                                                            {% for ci in risk.category_impacts.all %}
+                                                            <tr>
+                                                                <td><span class="badge bg-{{ ci.rating_color }}">{{ ci.category.name }}</span></td>
+                                                                <td class="text-center">{{ ci.impact }}</td>
+                                                                <td class="text-center">{{ ci.likelihood }}</td>
+                                                                <td class="text-center fw-bold">{{ ci.score }}</td>
+                                                                <td class="text-center">
+                                                                    <span class="badge bg-{{ ci.rating_color }}">{{ ci.risk_rating }}</span>
+                                                                </td>
+                                                                <td class="small">{{ ci.notes|default:"—" }}</td>
+                                                            </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+
+                                                
+                                                <div class="alert alert-info mt-3 py-2">
+                                                    <i class="fas fa-info-circle me-2"></i>
+                                                    <small><strong>Maximum Impact Across Categories:</strong> Score {{ risk.max_score }} affecting {{ risk.affected_categories_count|add:1 }} category(ies)</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                                                    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+                                                                    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+                                                                    <!-- jsPDF and autoTable for PDF generation -->
+                                                                    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+                                                                    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+                                                    <i class="fas fa-shield-alt me-2 text-primary"></i>Internal Controls & Effectiveness
+                                                </h5>
+                                                <p class="text-muted small mb-3">
+                                                    Active controls implemented to mitigate this risk. Total effectiveness: 
+                                                    {% if residual_risk_data %}
+                                                    <span class="badge bg-primary">{{ residual_risk_data.control_effectiveness }}%</span>
+                                                    {% else %}
+                                                    <span class="badge bg-secondary">Calculating...</span>
+                                                    {% endif %}
+                                                </p>
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover align-middle">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th style="width: 5%">#</th>
+                                                                <th style="width: 35%">Control Description</th>
+                                                                <th style="width: 15%" class="text-center">Type</th>
+                                                                <th style="width: 12%" class="text-center">Weight</th>
+                                                                <th style="width: 20%" class="text-center">Effectiveness</th>
+                                                                <th style="width: 13%" class="text-center">Status</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for control in controls %}
+                                                            <tr>
+                                                                <td class="text-muted">{{ forloop.counter }}</td>
+                                                                <td>
+                                                                    <div class="fw-bold">{{ control.name|truncatewords:8 }}</div>
+                                                                    {% if control.description %}
+                                                                    <small class="text-muted">{{ control.description|truncatewords:15 }}</small>
+                                                                    {% endif %}
+                                                                </td>
+                                                                <td class="text-center">{{ control.control_type|title }}</td>
+                                                                <td class="text-center">
+                                                                    <span class="badge bg-dark">{{ control.weight }}%</span>
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    <div class="progress" style="height: 20px;">
+                                                                        <div class="progress-bar {% if control.effectiveness >= 80 %}bg-success{% elif control.effectiveness >= 60 %}bg-primary{% elif control.effectiveness >= 40 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                                             role="progressbar" 
+                                                                             style="width: {{ control.effectiveness }}%"
+                                                                             aria-valuenow="{{ control.effectiveness }}" 
+                                                                             aria-valuemin="0" 
+                                                                             aria-valuemax="100">
+                                                                            {{ control.effectiveness }}%
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    {% if control.is_active %}
+                                                                    <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Active</span>
+                                                                    {% else %}
+                                                                    <span class="badge bg-secondary">Inactive</span>
+                                                                    {% endif %}
+                                                                </td>
+                                                            </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>

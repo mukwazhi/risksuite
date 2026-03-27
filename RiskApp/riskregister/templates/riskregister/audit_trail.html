@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Trail{% endblock %}
+
+{% block content %}
+<div class="container mt-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3 class="mb-0"><i class="fas fa-clipboard-list me-2 text-primary"></i>Audit Trail</h3>
+      <div class="text-muted small">Recent user activities across the system</div>
+    </div>
+    <div>
+      <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-home me-1"></i>Dashboard</a>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <form method="get" class="row g-2">
+        <div class="col-md-3">
+          <input type="text" class="form-control" name="q" placeholder="Search description..." value="{{ request.GET.q }}">
+        </div>
+        <div class="col-md-3">
+          <input type="text" class="form-control" name="action" placeholder="Filter by action (e.g., risk_reassessed)" value="{{ request.GET.action }}">
+        </div>
+        <div class="col-md-3">
+          <input type="number" class="form-control" name="user" placeholder="Filter by user id" value="{{ request.GET.user }}">
+        </div>
+        <div class="col-md-3 d-grid">
+          <button class="btn btn-primary"><i class="fas fa-filter me-1"></i>Apply Filters</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0 align-middle">
+        <thead class="bg-light">
+          <tr>
+            <th>Date/Time</th>
+            <th>User</th>
+            <th>Action</th>
+            <th>Object</th>
+            <th>Description</th>
+            <th class="text-center">Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          <tr>
+            <td><small class="text-muted">{{ log.created_at|date:"M d, Y H:i" }}</small></td>
+            <td>{% if log.user %}{{ log.user.get_full_name|default:log.user.username }}{% else %}<span class="text-muted">System</span>{% endif %}</td>
+            <td><span class="badge bg-secondary">{{ log.action }}</span></td>
+            <td>
+              <div class="small text-muted">{{ log.object_type }}</div>
+              <div class="fw-bold">ID: {{ log.object_id }}</div>
+            </td>
+            <td>{{ log.description|default:"—" }}</td>
+            <td class="text-center">
+              <button class="btn btn-sm btn-outline-primary" onclick="toggleDetails('details{{ forloop.counter }}')"><i class="fas fa-eye"></i></button>
+            </td>
+          </tr>
+          <tr id="details{{ forloop.counter }}" style="display:none;"><td colspan="6" class="bg-light">
+            <div class="p-3">
+              <pre class="mb-0" style="white-space:pre-wrap">{{ log.context|json_script:"logctx" }}</pre>
+              {% if log.action == 'risk_reassessed' %}
+                <div class="mt-2">
+                  <a href="{% url 'risk_detail' log.context.risk_id|default:log.object_id %}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-external-link-alt me-1"></i>View Risk</a>
+                </div>
+              {% endif %}
+              {% if log.action == 'assessment_decision_maintain' %}
+                <div class="mt-2">
+                  <a href="{% url 'indicator_assessment_history' log.context.indicator_id %}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-history me-1"></i>Assessment History</a>
+                </div>
+              {% endif %}
+            </div>
+          </td></tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-center text-muted py-4">No activity logged yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function toggleDetails(id){ const el=document.getElementById(id); el.style.display = el.style.display === 'none' ? 'table-row' : 'none'; }
+</script>
+{% endblock %}

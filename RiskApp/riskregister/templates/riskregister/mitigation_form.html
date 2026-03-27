@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RiskMate ERP - {{ form_title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        :root {
+            --admin-font-size: 13px;
+        }
+
+        html, body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: var(--admin-font-size);
+            line-height: 1.4;
+            background-color: #f8f9fa;
+        }
+
+        .form-control, .form-select {
+            font-size: var(--admin-font-size);
+            padding: 6px 8px;
+            border-radius: 2px;
+        }
+
+        textarea.form-control {
+            min-height: 96px;
+            padding: 8px;
+        }
+
+        .btn {
+            font-size: var(--admin-font-size);
+            padding: 6px 10px;
+        }
+
+        .info-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .strategy-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .strategy-info small {
+            display: block;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary border-bottom">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="{% url 'dashboard' %}">
+                <i class="fas fa-shield-alt me-2"></i>
+                RiskMate ERP
+            </a>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-3">
+        <div class="row">
+            <div class="col-lg-2 d-none d-lg-block bg-light border-end p-3">
+                <ul class="nav nav-pills flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'dashboard' %}">
+                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'all_risks' %}">
+                            <i class="fas fa-list me-2"></i> All Risks
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'risk_detail' risk_id=risk.risk_id %}">
+                            <i class="fas fa-file-alt me-2"></i> Risk Detail
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="col-lg-10 px-4">
+                <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
+                    <div>
+                        <h2 class="mb-2">{{ form_title }}</h2>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                                <li class="breadcrumb-item"><a href="{% url 'all_risks' %}">Risk Register</a></li>
+                                <li class="breadcrumb-item"><a href="{% url 'risk_detail' risk_id=risk.risk_id %}">{{ risk.risk_id }}</a></li>
+                                <li class="breadcrumb-item active">{{ form_title }}</li>
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Risk Context Box -->
+                <div class="info-box">
+                    <h6 class="mb-2"><i class="fas fa-exclamation-triangle me-2"></i>Risk to Mitigate</h6>
+                    <strong>{{ risk.risk_id }}: {{ risk.title }}</strong>
+                    <p class="mb-0 mt-2 small"><strong>Current Risk Score:</strong> {{ risk.risk_rating }}/25 
+                        (Likelihood: {{ risk.likelihood }}, Impact: {{ risk.impact }})</p>
+                </div>
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white py-3">
+                            <h5 class="mb-0 fw-bold">
+                                <i class="fas fa-shield-alt text-primary me-2"></i> Mitigation Details
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold" for="{{ form.strategy.id_for_label }}">
+                                        {{ form.strategy.label }}
+                                    </label>
+                                    {{ form.strategy }}
+                                    {% if form.strategy.errors %}<div class="text-danger small">{{ form.strategy.errors }}</div>{% endif %}
+                                    
+                                    <div class="strategy-info">
+                                        <strong>Risk Treatment Strategies:</strong>
+                                        <small><strong>Accept:</strong> Acknowledge the risk and take no action</small>
+                                        <small><strong>Transfer:</strong> Shift the risk to a third party (insurance, outsourcing)</small>
+                                        <small><strong>Reduce:</strong> Take actions to lower the probability or impact</small>
+                                        <small><strong>Avoid:</strong> Eliminate the risk by not engaging in the activity</small>
+                                    </div>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label fw-bold" for="{{ form.action.id_for_label }}">
+                                        {{ form.action.label }}
+                                    </label>
+                                    {{ form.action }}
+                                    <small class="text-muted d-block">{{ form.action.help_text }}</small>
+                                    {% if form.action.errors %}<div class="text-danger small">{{ form.action.errors }}</div>{% endif %}
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold" for="{{ form.due_date.id_for_label }}">
+                                        {{ form.due_date.label }}
+                                    </label>
+                                    {{ form.due_date }}
+                                    {% if form.due_date.errors %}<div class="text-danger small">{{ form.due_date.errors }}</div>{% endif %}
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold" for="{{ form.responsible_person.id_for_label }}">
+                                        {{ form.responsible_person.label }}
+                                    </label>
+                                    {{ form.responsible_person }}
+                                    {% if form.responsible_person.errors %}<div class="text-danger small">{{ form.responsible_person.errors }}</div>{% endif %}
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold" for="{{ form.status.id_for_label }}">
+                                        {{ form.status.label }}
+                                    </label>
+                                    {{ form.status }}
+                                    {% if form.status.errors %}<div class="text-danger small">{{ form.status.errors }}</div>{% endif %}
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label fw-bold" for="{{ form.evidence.id_for_label }}">
+                                        {{ form.evidence.label }}
+                                    </label>
+                                    {{ form.evidence }}
+                                    <small class="text-muted d-block">{{ form.evidence.help_text }}</small>
+                                    {% if form.evidence.errors %}<div class="text-danger small">{{ form.evidence.errors }}</div>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mb-4">
+                        <a href="{% url 'risk_detail' risk_id=risk.risk_id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-1"></i> Save Mitigation Action
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+</body>
+</html>

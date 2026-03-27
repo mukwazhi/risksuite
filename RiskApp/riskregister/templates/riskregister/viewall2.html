@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+{% block title %}All Risks - RiskMate ERP{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .filter-section { background-color: #f8f9fa; border-radius: 0.5rem; padding: 1.25rem; }
+  .risk-table-row { transition: all 0.2s; }
+  .risk-table-row:hover { background-color: #f8f9fa; }
+  .pagination .page-link { border-radius: 0.375rem; margin: 0 0.1rem; }
+  .table th { border-top: none; font-weight: 600; font-size: 0.875rem; color: #495057; }
+  .editable-cell { padding: 4px 6px; border: 1px solid transparent; border-radius: 3px; transition: all 0.2s; }
+  .editable-cell:hover { background-color: #f0f0f0; border-color: #ddd; cursor: pointer; }
+  .editable-cell.editing { background-color: #fff; border-color: #80bdff; box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); }
+  .editable-input, .editable-select { width: 100%; border: none; outline: none; background: transparent; font-size: inherit; font-family: inherit; }
+  .save-cancel-buttons { display: flex; gap: 5px; margin-top: 5px; }
+  .save-cancel-buttons button { padding: 2px 6px; font-size: 11px; }
+  .filtered-row { background-color: #e7f3ff !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mt-3 mb-4">
+  <div>
+    <h4 class="mb-1"><i class="fas fa-list-alt me-2 text-primary"></i>All Risks</h4>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">All Risks</li>
+      </ol>
+    </nav>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white py-3">
+    <h5 class="mb-0 fw-bold">
+      <i class="fas fa-filter text-primary me-2"></i> Filter Risks
+    </h5>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-3">
+        <label for="priorityFilter" class="form-label">Priority</label>
+        <select class="form-select" id="priorityFilter">
+          <option value="">All Priorities</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label for="statusFilter" class="form-label">Status</label>
+        <select class="form-select" id="statusFilter">
+          <option value="">All Statuses</option>
+          <option value="open">Open</option>
+          <option value="in-progress">In Progress</option>
+          <option value="resolved">Resolved</option>
+          <option value="closed">Closed</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label for="departmentFilter" class="form-label">Department</label>
+        <select class="form-select" id="departmentFilter">
+          <option value="">All Departments</option>
+          {% for dept in departments %}
+          <option value="{{ dept }}">{{ dept }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label for="categoryFilter" class="form-label">Category</label>
+        <select class="form-select" id="categoryFilter">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+          <option value="{{ cat }}">{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label for="searchInput" class="form-label">Search</label>
+        <div class="input-group">
+          <input type="text" class="form-control" id="searchInput" placeholder="Search risks...">
+          <button class="btn btn-outline-secondary" type="button" id="searchButton">
+            <i class="fas fa-search"></i>
+          </button>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <label for="dateFromFilter" class="form-label">Date From</label>
+        <input type="date" class="form-control" id="dateFromFilter">
+      </div>
+      <div class="col-md-3">
+        <label for="dateToFilter" class="form-label">Date To</label>
+        <input type="date" class="form-control" id="dateToFilter">
+      </div>
+      <div class="col-12">
+        <div class="d-flex justify-content-end gap-2">
+          <button class="btn btn-outline-secondary" id="clearFiltersBtn">
+            <i class="fas fa-times me-1"></i> Clear Filters
+          </button>
+          <button class="btn btn-primary" id="applyFiltersBtn">
+            <i class="fas fa-filter me-1"></i> Apply Filters
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+    <h5 class="mb-0 fw-bold">
+      <i class="fas fa-list-alt text-primary me-2"></i> All Risks
+      <span class="badge bg-primary ms-2" id="riskCount">0</span>
+    </h5>
+    <div>
+      <button class="btn btn-outline-secondary btn-sm" id="refreshBtn">
+        <i class="fas fa-sync-alt me-1"></i> Refresh
+      </button>
+      <button class="btn btn-outline-primary btn-sm ms-2" id="exportBtn">
+        <i class="fas fa-download me-1"></i> Export
+      </button>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th scope="col" width="5%">ID</th>
+            <th scope="col" width="25%">Risk Title</th>
+            <th scope="col" width="10%">Department</th>
+            <th scope="col" width="10%">Category</th>
+            <th scope="col" width="10%">Owner</th>
+            <th scope="col" width="10%">Priority</th>
+            <th scope="col" width="10%">Status</th>
+            <th scope="col" width="10%">Due Date</th>
+            <th scope="col" width="10%">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="risksTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card-footer bg-white py-3">
+    <div class="d-flex justify-content-between align-items-center">
+      <div class="text-muted small">
+        Showing <span id="showingFrom">0</span> to <span id="showingTo">0</span> of <span id="totalRisks">0</span> entries
+      </div>
+      <nav aria-label="Risk pagination">
+        <ul class="pagination pagination-sm mb-0" id="pagination"></ul>
+      </nav>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const risksData = JSON.parse('{{ risks_json|default:"[]"|escapejs }}');
+  let filteredData = risksData.slice();
+  let currentPage = 1;
+  const pageSize = 10;
+
+  function formatDate(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+  }
+
+  function renderRisksTable(risks) {
+    const tableBody = document.getElementById('risksTableBody');
+    tableBody.innerHTML = '';
+    if (risks.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="9" class="text-center">No risks found</td></tr>';
+      return;
+    }
+    const start = (currentPage - 1) * pageSize;
+    const end = Math.min(start + pageSize, risks.length);
+    const pageSlice = risks.slice(start, end);
+    pageSlice.forEach(risk => {
+      const row = document.createElement('tr');
+      row.classList.add('risk-table-row');
+      let priorityBadge = '';
+      if (risk.priority === 'high') {
+        priorityBadge = '<span class="badge bg-danger">High</span>';
+      } else if (risk.priority === 'medium') {
+        priorityBadge = '<span class="badge bg-warning text-dark">Medium</span>';
+      } else {
+        priorityBadge = '<span class="badge bg-success">Low</span>';
+      }
+      let statusClass = 'risk-status-open';
+      let statusText = 'Open';
+      if (risk.status === 'in-progress') { statusClass = 'risk-status-in-progress'; statusText = 'In Progress'; }
+      else if (risk.status === 'resolved') { statusClass = 'risk-status-resolved'; statusText = 'Resolved'; }
+      else if (risk.status === 'closed') { statusClass = 'risk-status-closed'; statusText = 'Closed'; }
+      row.innerHTML = `
+        <td class="fw-semibold">${risk.risk_id || risk.id}</td>
+        <td class="fw-semibold">${risk.title}</td>
+        <td>${risk.department}</td>
+        <td><span class="badge bg-secondary">${risk.category}</span></td>
+        <td>${risk.owner}</td>
+        <td>${priorityBadge}</td>
+        <td><span class="${statusClass}">${statusText}</span></td>
+        <td>${formatDate(risk.dueDate)}</td>
+        <td>
+          <div class="btn-group btn-group-sm">
+            <a href="/riskregister/risks/${risk.id}/" class="btn btn-outline-primary" title="View"><i class="fas fa-eye"></i></a>
+            <a href="/riskregister/risks/${risk.id}/edit/" class="btn btn-outline-secondary" title="Edit"><i class="fas fa-edit"></i></a>
+            <button type="button" class="btn btn-outline-danger delete-risk" data-id="${risk.id}" title="Delete"><i class="fas fa-trash"></i></button>
+          </div>
+        </td>`;
+      tableBody.appendChild(row);
+    });
+    document.querySelectorAll('.delete-risk').forEach(button => {
+      button.addEventListener('click', function() {
+        const riskId = this.getAttribute('data-id');
+        if (confirm('Are you sure you want to delete this risk?')) { deleteRisk(riskId); }
+      });
+    });
+  }
+
+  function deleteRisk(riskId) {
+    console.log('Delete risk:', riskId);
+    alert('Delete functionality needs to be implemented on the backend');
+  }
+
+  function applyFilters() {
+    const priority = document.getElementById('priorityFilter').value.toLowerCase();
+    const status = document.getElementById('statusFilter').value.toLowerCase();
+    const department = document.getElementById('departmentFilter').value;
+    const category = document.getElementById('categoryFilter').value;
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const dateFrom = document.getElementById('dateFromFilter').value;
+    const dateTo = document.getElementById('dateToFilter').value;
+    let filtered = risksData.filter(risk => {
+      const priorityMatch = priority === '' || (risk.priority && risk.priority.toLowerCase() === priority);
+      const statusMatch = status === '' || (risk.status && risk.status.toLowerCase() === status);
+      const departmentMatch = department === '' || (risk.department && risk.department === department);
+      const categoryMatch = category === '' || (risk.category && risk.category.toLowerCase() === category.toLowerCase());
+      const searchMatch = searchTerm === '' || (risk.title && risk.title.toLowerCase().includes(searchTerm)) || (risk.description && risk.description.toLowerCase().includes(searchTerm));
+      let dateMatch = true;
+      if (risk.dueDate) {
+        const riskDate = new Date(risk.dueDate);
+        if (dateFrom) { const fromDate = new Date(dateFrom); dateMatch = dateMatch && (riskDate >= fromDate); }
+        if (dateTo) { const toDate = new Date(dateTo); toDate.setHours(23, 59, 59, 999); dateMatch = dateMatch && (riskDate <= toDate); }
+      }
+      return priorityMatch && statusMatch && departmentMatch && categoryMatch && searchMatch && dateMatch;
+    });
+    filteredData = filtered;
+    currentPage = 1;
+    renderRisksTable(filteredData);
+    updatePagination(filteredData.length);
+    renderPagination(filteredData.length);
+  }
+
+  function clearFilters() {
+    document.getElementById('priorityFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('departmentFilter').value = '';
+    document.getElementById('categoryFilter').value = '';
+    document.getElementById('searchInput').value = '';
+    document.getElementById('dateFromFilter').value = '';
+    document.getElementById('dateToFilter').value = '';
+    filteredData = risksData.slice();
+    currentPage = 1;
+    renderRisksTable(filteredData);
+    updatePagination(filteredData.length);
+    renderPagination(filteredData.length);
+  }
+
+  function updatePagination(total) {
+    document.getElementById('riskCount').textContent = total;
+    document.getElementById('totalRisks').textContent = total;
+    const from = total > 0 ? ((currentPage - 1) * pageSize) + 1 : 0;
+    const to = Math.min(currentPage * pageSize, total);
+    document.getElementById('showingFrom').textContent = from;
+    document.getElementById('showingTo').textContent = to;
+  }
+
+  function renderPagination(total) {
+    const ul = document.getElementById('pagination');
+    ul.innerHTML = '';
+    const totalPages = Math.ceil(total / pageSize) || 1;
+    const addItem = (disabled, active, label, page, ariaLabel) => {
+      const li = document.createElement('li');
+      li.className = `page-item${disabled ? ' disabled' : ''}${active ? ' active' : ''}`;
+      const a = document.createElement('a');
+      a.className = 'page-link';
+      a.href = '#';
+      if (ariaLabel) a.setAttribute('aria-label', ariaLabel);
+      a.textContent = label;
+      if (!disabled && !active) {
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+          currentPage = page;
+          renderRisksTable(filteredData);
+          updatePagination(filteredData.length);
+          renderPagination(filteredData.length);
+        });
+      }
+      li.appendChild(a);
+      ul.appendChild(li);
+    };
+    addItem(currentPage === 1, false, '««', 1, 'First');
+    addItem(currentPage === 1, false, '«', Math.max(1, currentPage - 1), 'Previous');
+    const start = Math.max(1, currentPage - 2);
+    const end = Math.min(totalPages, currentPage + 2);
+    for (let num = start; num <= end; num++) { addItem(false, currentPage === num, String(num), num); }
+    addItem(currentPage === totalPages, false, '»', Math.min(totalPages, currentPage + 1), 'Next');
+    addItem(currentPage === totalPages, false, '»»', totalPages, 'Last');
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    filteredData = risksData.slice();
+    renderRisksTable(filteredData);
+    updatePagination(filteredData.length);
+    renderPagination(filteredData.length);
+    document.getElementById('applyFiltersBtn').addEventListener('click', function(){ currentPage = 1; applyFilters(); });
+    document.getElementById('clearFiltersBtn').addEventListener('click', clearFilters);
+    document.getElementById('searchInput').addEventListener('input', applyFilters);
+    document.getElementById('dateFromFilter').addEventListener('change', function(){ currentPage = 1; applyFilters(); });
+    document.getElementById('dateToFilter').addEventListener('change', function(){ currentPage = 1; applyFilters(); });
+    document.getElementById('refreshBtn').addEventListener('click', function() { location.reload(); });
+    document.getElementById('exportBtn').addEventListener('click', function() { alert('Export functionality to be implemented'); });
+  });
+</script>
+{% endblock %}

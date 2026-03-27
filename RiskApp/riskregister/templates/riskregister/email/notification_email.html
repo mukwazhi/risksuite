@@ -1,0 +1,36 @@
+<h2>RiskSuite notifications</h2>
+<p>Hi {{ user.get_full_name|default:user.username }},</p>
+{% if sample_text %}
+<p>{{ sample_text }}</p>
+{% endif %}
+
+{% if assessment_items %}
+  <h3>Assessments</h3>
+  {% for key, lst in assessment_items.items %}
+    {% if lst %}
+      <h4>{{ key|capfirst }}</h4>
+      <ul>
+        {% for s in lst %}
+          <li>{{ s.indicator.preferred_kpi_name }} — due {{ s.scheduled_date }} (Risk: {{ s.indicator.risk.risk_id }})</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+{% if mitigation_items %}
+  <h3>Mitigations</h3>
+  {% for key, lst in mitigation_items.items %}
+    {% if lst %}
+      <h4>{{ key|capfirst }}</h4>
+      <ul>
+        {% for m in lst %}
+          <li>{{ m.action }} — due {{ m.due_date }} (Risk: {{ m.risk.risk_id }})</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+<p>Generated at {{ generated_at }}</p>
+<p>If you no longer wish to receive these emails, update your preferences in the application.</p>

@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>{% block title %}RiskMate ERP{% endblock %}</title>
+
+    <!-- Bootstrap 5.3 CSS (CDN) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <style>
+      /* Global admin font stack + sizing */
+      :root{
+          --admin-font-size:13px;
+          --admin-input-vertical:6px;
+          --admin-input-horizontal:8px;
+      }
+
+      html, body{
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+          font-size: var(--admin-font-size);
+          line-height: 1.4;
+          color: #222;
+          background-color: #f8f9fa;
+          height: 100%;
+      }
+
+      /* Headings follow admin weight */
+      h1,h2,h3,h4,h5,h6{
+          font-weight:600;
+          line-height:1.25;
+          margin-top:0.5rem;
+          margin-bottom:0.5rem;
+      }
+
+      /* Inputs / selects / textareas sized to match Django admin */
+      .form-control,
+      .form-select {
+          font-size: 13px;
+          padding: var(--admin-input-vertical) var(--admin-input-horizontal);
+          line-height: 1.4;
+          border-radius: 2px;
+          height: calc(1.6em + 2 * var(--admin-input-vertical));
+      }
+
+      textarea.form-control {
+          height: auto;
+          min-height: 96px;
+          padding: 8px;
+      }
+
+      /* Small variants */
+      .form-control-sm, .form-select-sm {
+          font-size: 12px;
+          padding: 4px 6px;
+          height: calc(1.4em + 8px);
+      }
+
+      /* Buttons / cards / tables use same base size */
+      .btn { font-size: 13px; padding: 6px 10px; border-radius: 4px; }
+      .card, .table, .nav, .list-group-item { font-size: 13px; }
+
+      /* Visual tweaks */
+      .navbar-brand { font-size: 1.5rem; }
+      .breadcrumb { font-size: 0.875rem; }
+      .form-label { font-size: 0.9rem; margin-bottom:0.5rem; }
+      .input-group-text { border-radius: 0.375rem 0 0 0.375rem; }
+      .card { border-radius: 0.5rem; }
+      .stat-card { transition: transform 0.2s; }
+      .stat-card:hover { transform: translateY(-5px); }
+      
+      /* Sidebar sticky */
+      .sidebar-sticky {
+          position: sticky;
+          top: 0;
+          height: calc(100vh - 56px);
+          overflow-y: auto;
+      }
+      
+      /* Stat number shared styling for summary cards - match /tasks/ appearance */
+      .stat-number {
+          font-size: 2rem;
+          font-weight: 700;
+          line-height: 1;
+          margin: 0.5rem 0;
+          text-align: center;
+          padding: 0.25rem 0; /* small vertical padding for breathing room */
+      }
+
+      /* Ensure labels and small help text are centered and padded */
+      .stat-summary {
+          border-radius: 8px;
+          padding: 1rem; /* ensure consistent internal spacing */
+          text-align: center;
+          transition: transform 0.2s;
+      }
+
+      /* Task / risk icon inline style: plain icon, inherit text size (no colored circle) */
+      .task-icon {
+          display: inline-block;
+          width: auto;
+          height: auto;
+          padding: 0;
+          margin: 0;
+          border-radius: 0;
+          vertical-align: middle;
+          font-size: 1em; /* match surrounding font size */
+          line-height: 1;
+      }
+      .task-icon i, .task-icon { font-size: 1em; }
+
+      .stat-label {
+          display: block;
+          text-align: center;
+          margin-bottom: 0.25rem;
+      }
+
+      .stat-summary small.text-muted {
+          display: block;
+          margin-top: 0.25rem;
+          color: #6c757d;
+      }
+      /* Remove default blue shading for active navigation links */
+      .nav-pills .nav-link.active,
+      .nav .nav-link.active,
+      .nav-link.active {
+          background-color: transparent !important;
+          color: inherit !important;
+          box-shadow: none !important;
+      }
+    </style>
+    
+    {% block extra_styles %}{% endblock %}
+  </head>
+  <body>
+    {% include 'includes/topnav.html' %}
+
+    <div class="container-fluid mt-3">
+        <div class="row">
+            {% block sidebar %}
+                {% include 'includes/sidenav.html' %}
+            {% endblock %}
+            
+            <!-- Main Content -->
+            <div class="col-lg-10 px-4">
+                <!-- Django Messages -->
+                {% block show_messages %}
+                {% if messages %}
+                <div class="alert-container mb-3">
+                    {% for message in messages %}
+                        {# Skip messages tagged for popup and render the rest as alerts #}
+                        {% if 'assessment_saved' not in message.tags %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {% if message.tags == 'success' %}
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                            {% elif message.tags == 'error' %}
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            {% elif message.tags == 'warning' %}
+                                <i class="bi bi-exclamation-circle-fill me-2"></i>
+                            {% else %}
+                                <i class="bi bi-info-circle-fill me-2"></i>
+                            {% endif %}
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                {# Hidden container for popup-tagged messages (e.g., assessment_saved) #}
+                <div id="popupMessages" style="display:none;">
+                    {% for message in messages %}
+                        {% if 'assessment_saved' in message.tags %}
+                            <div class="popup-msg" data-tags="{{ message.tags }}">{{ message }}</div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endblock show_messages %}
+                
+                {% block content %}
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto py-3 bg-primary text-white">
+      <div class="container-fluid text-center">
+        <span>© 2025 RiskMate ERP. All rights reserved.</span>
+      </div>
+    </footer>
+
+    <!-- Bootstrap 5.3 JS (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Notification Badge Auto-Update -->
+    <script>
+        // Function to update notification badge
+        {% if show_notifications|default:True %}
+        function updateNotificationBadge() {
+            fetch('/notifications/api/unread-count/')
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.getElementById('notificationBadge');
+                    if (badge) {
+                        if (data.unread_count > 0) {
+                            badge.textContent = data.unread_count > 99 ? '99+' : data.unread_count;
+                            badge.style.display = 'inline-block';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    }
+                })
+                .catch(error => console.error('Error fetching notification count:', error));
+        }
+        
+        // Update badge on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateNotificationBadge();
+            
+            // Auto-refresh every 60 seconds
+            setInterval(updateNotificationBadge, 60000);
+        });
+        {% endif %}
+    </script>
+    
+    {% block extra_scripts %}{% endblock %}
+    <script>
+        // Show popup toasts for messages tagged with 'assessment_saved'
+        document.addEventListener('DOMContentLoaded', function(){
+            const popupContainer = document.getElementById('popupMessages');
+            if (!popupContainer) return;
+            const msgs = popupContainer.querySelectorAll('.popup-msg');
+            if (!msgs.length) return;
+
+            // Create toast markup container
+            let toastWrap = document.createElement('div');
+            toastWrap.className = 'position-fixed top-0 end-0 p-3';
+            toastWrap.style.zIndex = 1080;
+            document.body.appendChild(toastWrap);
+
+            msgs.forEach(function(node){
+                const text = node.textContent.trim();
+
+                const toastEl = document.createElement('div');
+                toastEl.className = 'toast align-items-center text-bg-success border-0';
+                toastEl.setAttribute('role','status');
+                toastEl.setAttribute('aria-live','polite');
+                toastEl.setAttribute('aria-atomic','true');
+
+                toastEl.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${text}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                `;
+                toastWrap.appendChild(toastEl);
+
+                const toast = new bootstrap.Toast(toastEl, {delay: 4000});
+                toast.show();
+            });
+        });
+    </script>
+    <!-- Add this SVG sprite just before </body> for Bootstrap icons -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="toggles2" viewBox="0 0 16 16">
+    <path d="M9.5 1a.5.5 0 0 1 .5.5V3h1.5A1.5 1.5 0 0 1 13 4.5v1.55a2.5 2.5 0 1 1 0 4.9v1.55A1.5 1.5 0 0 1 11.5 14H10v1.5a.5.5 0 0 1-1 0V14H7v1.5a.5.5 0 0 1-1 0V14H4.5A1.5 1.5 0 0 1 3 12.5v-1.55a2.5 2.5 0 1 1 0-4.9V4.5A1.5 1.5 0 0 1 4.5 3H6V1.5a.5.5 0 0 1 1 0V3h2V1.5a.5.5 0 0 1 .5-.5zm-5 3A.5.5 0 0 0 4 4.5v1.55a2.5 2.5 0 0 1 0 4.9v1.55a.5.5 0 0 0 .5.5H6v-2.5a.5.5 0 0 1 1 0V13h2v-2.5a.5.5 0 0 1 1 0V13h1.5a.5.5 0 0 0 .5-.5v-1.55a2.5 2.5 0 0 1 0-4.9V4.5a.5.5 0 0 0-.5-.5H10v2.5a.5.5 0 0 1-1 0V3H7v2.5a.5.5 0 0 1-1 0V3H4.5z"/>
+  </symbol>
+  <symbol id="cpu-fill" viewBox="0 0 16 16">
+    <path d="M5 0a.5.5 0 0 1 .5.5V2h1V.5a.5.5 0 0 1 1 0V2h1V.5a.5.5 0 0 1 1 0V2h.5A2.5 2.5 0 0 1 14 4.5V5h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14v.5A2.5 2.5 0 0 1 11.5 16H11v1.5a.5.5 0 0 1-1 0V16h-1v1.5a.5.5 0 0 1-1 0V16h-1v1.5a.5.5 0 0 1-1 0V16H4.5A2.5 2.5 0 0 1 2 13.5V13H.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2v-.5A2.5 2.5 0 0 1 4.5 2H5V.5A.5.5 0 0 1 5 0zm1 4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H6z"/>
+  </symbol>
+</svg>
+  </body>
+</html>

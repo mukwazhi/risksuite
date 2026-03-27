@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+{% block title %}{% if is_edit %}Edit Risk - Stage 3{% else %}Create Risk - Stage 3{% endif %} - RiskMate ERP{% endblock %}
+{% block extra_styles %}
+<style>
+    .form-label { font-size: 0.9rem; margin-bottom: 0.5rem; font-weight: 600; }
+    .card { border-radius: 0.5rem; border: 0; }
+    .section-header { background: #f8f9fa; padding: 10px 15px; border-radius: 5px; margin-bottom: 15px; border-left: 4px solid #0d6efd; }
+    .section-header h5 { margin: 0; color: #0d6efd; }
+    .progress-stepper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; position: relative; }
+    .progress-stepper::before { content: ''; position: absolute; top: 20px; left: 0; right: 0; height: 2px; background: #dee2e6; z-index: 0; }
+    .progress-step { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; flex: 1; }
+    .progress-step-circle { width: 40px; height: 40px; border-radius: 50%; background: white; border: 3px solid #dee2e6; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; margin-bottom: 8px; }
+    .progress-step.active .progress-step-circle { border-color: #0d6efd; background: #0d6efd; color: white; }
+    .progress-step.completed .progress-step-circle { border-color: #198754; background: #198754; color: white; }
+    .progress-step-label { font-size: 0.85rem; font-weight: 600; color: #6c757d; text-align: center; }
+    .progress-step.active .progress-step-label { color: #0d6efd; }
+    .progress-step.completed .progress-step-label { color: #198754; }
+    
+    .risk-matrix { display: inline-block; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .risk-score-badge { font-size: 1.5rem; font-weight: bold; padding: 12px; border-radius: 50%; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; margin: 0 auto; }
+    .risk-critical { background: #dc3545; color: white; }
+    .risk-high { background: #fd7e14; color: white; }
+    .risk-medium { background: #ffc107; color: #000; }
+    .risk-low { background: #20c997; color: white; }
+    
+    .control-item { border-left: 3px solid #0d6efd; padding: 12px; background: #f8f9fa; border-radius: 4px; margin-bottom: 10px; }
+    .control-type-badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; font-weight: 600; }
+    .type-preventive { background: #d1ecf1; color: #0c5460; }
+    .type-detective { background: #fff3cd; color: #856404; }
+    .type-corrective { background: #f8d7da; color: #721c24; }
+    .type-directive { background: #d4edda; color: #155724; }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
+        <div>
+            {% if is_edit %}
+            <h4 class="mb-1"><i class="fas fa-shield-alt me-2 text-success"></i>Edit Risk: {{ risk.title }}</h4>
+            {% else %}
+            <h4 class="mb-1"><i class="fas fa-shield-alt me-2 text-success"></i>Residual Risk Rating</h4>
+            {% endif %}
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'all_risks' %}">Risk Register</a></li>
+                    {% if is_edit %}
+                    <li class="breadcrumb-item active">Edit Risk - Stage 3</li>
+                    {% else %}
+                    <li class="breadcrumb-item active">New Risk - Stage 3</li>
+                    {% endif %}
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Progress Stepper -->
+    <div class="progress-stepper">
+        <div class="progress-step completed">
+            <div class="progress-step-circle"><i class="fas fa-check"></i></div>
+            <div class="progress-step-label">Basic Information</div>
+        </div>
+        <div class="progress-step completed">
+            <div class="progress-step-circle"><i class="fas fa-check"></i></div>
+            <div class="progress-step-label">Risk Assessment & Controls</div>
+        </div>
+        <div class="progress-step active">
+            <div class="progress-step-circle">3</div>
+            <div class="progress-step-label">Residual Risk Rating</div>
+        </div>
+        <div class="progress-step">
+            <div class="progress-step-circle">4</div>
+            <div class="progress-step-label">Add Risk Indicators</div>
+        </div>
+    </div>
+
+    <!-- Stage Info -->
+    <div class="alert alert-success">
+        <h6 class="alert-heading mb-2"><i class="fas fa-check-circle me-2"></i>Stage 3 of 4: Residual Risk Rating</h6>
+        <p class="mb-0">Review your residual risk rating after applying controls. In the next stage, you'll add risk indicators to monitor this risk.</p>
+    </div>
+
+    <!-- Risk Summary -->
+    <div class="card border-0 shadow-sm mb-4 bg-light">
+        <div class="card-body">
+            <h6 class="fw-bold mb-2"><i class="fas fa-file-alt me-2 text-primary"></i>Risk Summary</h6>
+            <p class="mb-1"><strong>Title:</strong> {{ risk.title }}</p>
+            <p class="mb-1"><strong>Department:</strong> {{ risk.department }}</p>
+            <p class="mb-1"><strong>Category:</strong> {{ risk.category }}</p>
+            <p class="mb-0"><strong>Owner:</strong> {{ risk.risk_owner|default:"Not assigned" }}</p>
+        </div>
+    </div>
+
+    <!-- Risk Ratings Comparison -->
+    <div class="row mb-4">
+        <!-- Inherent Risk -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <h6 class="card-title"><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Inherent Risk</h6>
+                    <p class="text-muted small mb-3">Risk without controls</p>
+                    {% with inherent_score=risk.inherent_risk_score %}
+                    {% if inherent_score >= 20 %}
+                        <div class="risk-score-badge risk-critical">{{ inherent_score }}</div>
+                        <p class="mt-3 mb-0"><span class="badge bg-danger">CRITICAL</span></p>
+                    {% elif inherent_score >= 15 %}
+                        <div class="risk-score-badge risk-high">{{ inherent_score }}</div>
+                        <p class="mt-3 mb-0"><span class="badge bg-warning text-dark">HIGH</span></p>
+                    {% elif inherent_score >= 8 %}
+                        <div class="risk-score-badge risk-medium">{{ inherent_score }}</div>
+                        <p class="mt-3 mb-0"><span class="badge bg-info text-dark">MEDIUM</span></p>
+                    {% else %}
+                        <div class="risk-score-badge risk-low">{{ inherent_score }}</div>
+                        <p class="mt-3 mb-0"><span class="badge bg-success">LOW</span></p>
+                    {% endif %}
+                    {% endwith %}
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted small">Likelihood:</span>
+                            <strong>{{ risk.inherent_likelihood }}/5</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2">
+                            <span class="text-muted small">Impact:</span>
+                            <strong>{{ risk.inherent_impact }}/5</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Reduction -->
+        <div class="col-md-4 d-flex align-items-center justify-content-center">
+            <div class="text-center">
+                <i class="fas fa-arrow-right text-success" style="font-size: 3rem;"></i>
+                <p class="mt-2 mb-0 text-success fw-bold">{{ residual_data.risk_reduction_pct }}% Reduction</p>
+                <p class="text-muted small mb-0">Control Effectiveness: {{ residual_data.control_effectiveness }}%</p>
+            </div>
+        </div>
+
+        <!-- Residual Risk -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 border-success" style="border-width: 3px !important;">
+                <div class="card-body text-center">
+                    <h6 class="card-title"><i class="fas fa-shield-alt me-2 text-success"></i>Residual Risk</h6>
+                    <p class="text-muted small mb-3">Risk after controls</p>
+                    {% with residual_score=residual_data.residual_score %}
+                    {% if residual_score >= 20 %}
+                        <div class="risk-score-badge risk-critical">{{ residual_score }}</div>
+                        <p class="mt-3 mb-0"><span class="badge bg-danger">CRITICAL</span></p>
+                    {% elif residual_score >= 15 %}
+                        <div class="risk-score-badge risk-high">{{ residual_score }}</div>
+                        <p class="mt-3 mb-0"><span class="badge bg-warning text-dark">HIGH</span></p>
+                    {% elif residual_score >= 8 %}
+                        <div class="risk-score-badge risk-medium">{{ residual_score }}</div>
+                        <p class="mt-3 mb-0"><span class="badge bg-info text-dark">MEDIUM</span></p>
+                    {% else %}
+                        <div class="risk-score-badge risk-low">{{ residual_score }}</div>
+                        <p class="mt-3 mb-0"><span class="badge bg-success">LOW</span></p>
+                    {% endif %}
+                    {% endwith %}
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted small">Likelihood:</span>
+                            <strong>{{ residual_data.residual_likelihood }}/5</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2">
+                            <span class="text-muted small">Impact:</span>
+                            <strong>{{ residual_data.residual_impact }}/5</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls Summary -->
+    {% if controls %}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h6 class="mb-0"><i class="fas fa-tasks me-2 text-primary"></i>Internal Controls ({{ controls.count }})</h6>
+        </div>
+        <div class="card-body">
+            {% for control in controls %}
+            <div class="control-item">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center mb-2">
+                            <strong class="me-2">{{ control.name }}</strong>
+                            <span class="control-type-badge type-{{ control.control_type }}">
+                                {{ control.get_control_type_display|truncatewords:1 }}
+                            </span>
+                        </div>
+                        {% if control.description %}
+                        <p class="text-muted small mb-2">{{ control.description }}</p>
+                        {% endif %}
+                        <div class="d-flex gap-3 small text-muted">
+                            <span><i class="fas fa-star me-1"></i>Weight: {{ control.weight }}/10</span>
+                            <span><i class="fas fa-percentage me-1"></i>Effectiveness: {{ control.effectiveness }}%</span>
+                            {% if control.control_owner %}
+                            <span><i class="fas fa-user me-1"></i>Owner: {{ control.control_owner }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="text-end ms-3">
+                        <div class="badge bg-primary" style="font-size: 0.9rem;">{{ control.weighted_effectiveness|floatformat:1 }}</div>
+                        <div class="text-muted small">Weighted</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle me-2"></i>No controls defined. The residual risk equals the inherent risk.
+    </div>
+    {% endif %}
+
+    <!-- Control Reduction Details -->
+    {% if residual_data.has_inherent_risk and controls %}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h6 class="mb-0"><i class="fas fa-chart-line me-2 text-info"></i>Risk Reduction Analysis</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-muted small mb-2">Likelihood Reduction</h6>
+                    <div class="progress mb-2" style="height: 25px;">
+                        <div class="progress-bar bg-info" role="progressbar" 
+                             style="width: {{ residual_data.likelihood_reduction }}%;" 
+                             aria-valuenow="{{ residual_data.likelihood_reduction }}" 
+                             aria-valuemin="0" aria-valuemax="100">
+                            {{ residual_data.likelihood_reduction }}%
+                        </div>
+                    </div>
+                    <p class="small text-muted mb-0">Controls reduce likelihood from <strong>{{ risk.inherent_likelihood }}</strong> to <strong>{{ residual_data.residual_likelihood }}</strong></p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-muted small mb-2">Impact Reduction</h6>
+                    <div class="progress mb-2" style="height: 25px;">
+                        <div class="progress-bar bg-warning" role="progressbar" 
+                             style="width: {{ residual_data.impact_reduction }}%;" 
+                             aria-valuenow="{{ residual_data.impact_reduction }}" 
+                             aria-valuemin="0" aria-valuemax="100">
+                            {{ residual_data.impact_reduction }}%
+                        </div>
+                    </div>
+                    <p class="small text-muted mb-0">Controls reduce impact from <strong>{{ risk.inherent_impact }}</strong> to <strong>{{ residual_data.residual_impact }}</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Action Buttons -->
+    <form method="post" id="continueForm">
+        {% csrf_token %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <a href="{% if is_edit %}{% url 'edit_risk' risk.risk_id %}?stage=2{% else %}{% url 'create_risk' %}?stage=2{% endif %}" 
+                           class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Controls
+                        </a>
+                    </div>
+                    <div>
+                        {% if not is_edit %}
+                        <button type="submit" name="action" value="park" class="btn btn-warning me-2">
+                            <i class="fas fa-parking me-2"></i>Park Risk
+                        </button>
+                        <button type="submit" name="action" value="submit" class="btn btn-primary">
+                            <i class="fas fa-arrow-right me-2"></i>Continue to Stage 4: Add Indicators
+                        </button>
+                        {% else %}
+                        <button type="submit" name="action" value="park" class="btn btn-warning me-2">
+                            <i class="fas fa-parking me-2"></i>Park & Save
+                        </button>
+                        <button type="submit" name="action" value="submit" class="btn btn-primary">
+                            <i class="fas fa-arrow-right me-2"></i>Continue to Add Indicators
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Confirm before leaving if form is dirty
+    let formDirty = false;
+    
+    document.getElementById('continueForm').addEventListener('change', function() {
+        formDirty = true;
+    });
+    
+    window.addEventListener('beforeunload', function(e) {
+        if (formDirty) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+    
+    // Don't warn on form submit
+    document.getElementById('continueForm').addEventListener('submit', function() {
+        formDirty = false;
+    });
+</script>
+{% endblock %}

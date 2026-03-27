@@ -1,0 +1,83 @@
+{% extends 'base_nosidebar.html' %}
+
+{% block title %}Confirm Delete - RiskMate ERP{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .confirm-card {
+        max-width: 600px;
+        margin: 50px auto;
+    }
+    
+    .warning-header {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 8px 8px 0 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="card border-0 shadow-lg confirm-card">
+            <div class="warning-header">
+                <h3 class="mb-2">
+                    <i class="fas fa-trash-alt me-2"></i>
+                    Confirm Risk Deletion
+                </h3>
+                <p class="mb-0 opacity-75">This action will soft delete the risk</p>
+            </div>
+            
+            <div class="card-body p-4">
+                <div class="alert alert-warning border-0" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning!</strong> You are about to delete this risk.
+                </div>
+                
+                <div class="mb-4">
+                    <h5 class="fw-bold mb-3">Risk Details:</h5>
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="text-muted" width="150">Risk ID:</td>
+                            <td class="fw-bold">{{ risk.risk_id }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Title:</td>
+                            <td class="fw-bold">{{ risk.title }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Department:</td>
+                            <td>{{ risk.department.name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Status:</td>
+                            <td>
+                                <span class="badge bg-success">{{ risk.get_status_display }}</span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="bg-light p-3 rounded mb-4">
+                    <p class="mb-0 small text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Note: This is a soft delete. The risk will be marked as deleted but retained in the database and can be restored later by a superuser.
+                    </p>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a href="{% url 'risk_detail' risk_id=risk.risk_id %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash-alt me-1"></i> Confirm Delete
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

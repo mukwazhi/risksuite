@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+{% block title %}{% if is_edit %}Edit Risk - Stage 2{% else %}Create Risk - Stage 2{% endif %} - RiskMate ERP{% endblock %}
+{% block extra_styles %}
+<style>
+    .form-label { font-size: 0.9rem; margin-bottom: 0.5rem; font-weight: 600; }
+    .card { border-radius: 0.5rem; border: 0; }
+    .section-header { background: #f8f9fa; padding: 10px 15px; border-radius: 5px; margin-bottom: 15px; border-left: 4px solid #0d6efd; }
+    .section-header h5 { margin: 0; color: #0d6efd; }
+    .progress-stepper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; position: relative; }
+    .progress-stepper::before { content: ''; position: absolute; top: 20px; left: 0; right: 0; height: 2px; background: #dee2e6; z-index: 0; }
+    .progress-step { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; flex: 1; }
+    .progress-step-circle { width: 40px; height: 40px; border-radius: 50%; background: white; border: 3px solid #dee2e6; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; margin-bottom: 8px; }
+    .progress-step.active .progress-step-circle { border-color: #0d6efd; background: #0d6efd; color: white; }
+    .progress-step.completed .progress-step-circle { border-color: #198754; background: #198754; color: white; }
+    .progress-step-label { font-size: 0.85rem; font-weight: 600; color: #6c757d; text-align: center; }
+    .progress-step.active .progress-step-label { color: #0d6efd; }
+    .progress-step.completed .progress-step-label { color: #198754; }
+    .control-effectiveness-slider { height: 8px; }
+    .control-effectiveness-output { font-size: 0.9rem; padding: 4px 8px; min-width: 50px; text-align: center; }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
+        <div>
+            {% if is_edit %}
+            <h4 class="mb-1"><i class="fas fa-edit me-2 text-primary"></i>Edit Risk: {{ risk.title }}</h4>
+            {% else %}
+            <h4 class="mb-1"><i class="fas fa-plus-circle me-2 text-primary"></i>Complete Risk Assessment</h4>
+            {% endif %}
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'all_risks' %}">Risk Register</a></li>
+                    {% if is_edit %}
+                    <li class="breadcrumb-item active">Edit Risk - Stage 2</li>
+                    {% else %}
+                    <li class="breadcrumb-item active">New Risk - Stage 2</li>
+                    {% endif %}
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Progress Stepper -->
+    <div class="progress-stepper">
+        <div class="progress-step completed">
+            <div class="progress-step-circle"><i class="fas fa-check"></i></div>
+            <div class="progress-step-label">Basic Information</div>
+        </div>
+        <div class="progress-step active">
+            <div class="progress-step-circle">2</div>
+            <div class="progress-step-label">Risk Assessment & Controls</div>
+        </div>
+        <div class="progress-step">
+            <div class="progress-step-circle">3</div>
+            <div class="progress-step-label">Residual Risk Rating</div>
+        </div>
+        <div class="progress-step">
+            <div class="progress-step-circle">4</div>
+            <div class="progress-step-label">Add Risk Indicators</div>
+        </div>
+    </div>
+
+    {% if assessment_form.non_field_errors %}
+    <div class="alert alert-danger">
+        {{ assessment_form.non_field_errors }}
+    </div>
+    {% endif %}
+    
+    <!-- Stage Info -->
+    <div class="alert alert-info">
+        <h6 class="alert-heading mb-2"><i class="fas fa-info-circle me-2"></i>Stage 2 of 4: Inherent Risk Assessment & Internal Controls</h6>
+        <p class="mb-0">Assess the risk's inherent likelihood and impact <strong>WITHOUT</strong> considering any controls. Then define the internal controls that help mitigate this risk.</p>
+    </div>
+
+    <!-- Risk Summary -->
+    <div class="card border-0 shadow-sm mb-4 bg-light">
+        <div class="card-body">
+            <h6 class="fw-bold mb-2"><i class="fas fa-file-alt me-2 text-primary"></i>Risk Summary</h6>
+            <p class="mb-1"><strong>Title:</strong> {{ risk.title }}</p>
+            <p class="mb-1"><strong>Department:</strong> {{ risk.department }}</p>
+            <p class="mb-0"><strong>Category:</strong> {{ risk.category }}</p>
+        </div>
+    </div>
+
+    <form method="post" novalidate id="riskForm">
+        {% csrf_token %}
+
+        <!-- Inherent Risk Assessment -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i> Inherent Risk Assessment
+                </h5>
+                <small class="text-muted">Rate the risk WITHOUT considering any controls</small>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ assessment_form.inherent_likelihood.id_for_label }}">
+                            {{ assessment_form.inherent_likelihood.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ assessment_form.inherent_likelihood }}
+                        <small class="form-text text-muted d-block">{{ assessment_form.inherent_likelihood.help_text }}</small>
+                        {% if assessment_form.inherent_likelihood.errors %}<div class="text-danger small">{{ assessment_form.inherent_likelihood.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ assessment_form.inherent_impact.id_for_label }}">
+                            {{ assessment_form.inherent_impact.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ assessment_form.inherent_impact }}
+                        <small class="form-text text-muted d-block">{{ assessment_form.inherent_impact.help_text }}</small>
+                        {% if assessment_form.inherent_impact.errors %}<div class="text-danger small">{{ assessment_form.inherent_impact.errors }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="alert alert-warning py-2 small mt-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Important:</strong> Inherent risk is the risk level before any controls are applied. Think: "What if we had NO controls in place?"
+                </div>
+            </div>
+        </div>
+
+        <!-- Internal Controls Section -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-shield-alt text-success me-2"></i> Internal Controls
+                    </h5>
+                    <small class="text-muted">Define controls that mitigate this risk (with weighted effectiveness)</small>
+                </div>
+                <button type="button" class="btn btn-sm btn-success" id="addControlBtn">
+                    <i class="fas fa-plus me-1"></i> Add Control
+                </button>
+            </div>
+            <div class="card-body">
+                {{ control_formset.management_form }}
+                <div id="controls-container">
+                    {% for form in control_formset %}
+                    <div class="control-form border rounded p-3 mb-3 position-relative bg-light">
+                        {{ form.id }}
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger py-2 small">{{ form.non_field_errors }}</div>
+                        {% endif %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Control Name *</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}<div class="text-danger small">{{ form.name.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Control Type *</label>
+                                {{ form.control_type }}
+                                {% if form.control_type.errors %}<div class="text-danger small">{{ form.control_type.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Description</label>
+                                {{ form.description }}
+                                {% if form.description.errors %}<div class="text-danger small">{{ form.description.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Effectiveness (0-100%)</label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="range" name="{{ form.effectiveness.html_name }}" class="form-control control-effectiveness-slider" min="0" max="100" step="1" value="{{ form.effectiveness.value|default:0 }}" id="{{ form.effectiveness.id_for_label }}">
+                                    <output class="badge bg-primary control-effectiveness-output">{{ form.effectiveness.value|default:0 }}%</output>
+                                </div>
+                                {% if form.effectiveness.errors %}<div class="text-danger small">{{ form.effectiveness.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Weight (1-10)</label>
+                                {{ form.weight }}
+                                {% if form.weight.errors %}<div class="text-danger small">{{ form.weight.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold">Frequency</label>
+                                {{ form.frequency }}
+                                {% if form.frequency.errors %}<div class="text-danger small">{{ form.frequency.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Control Owner</label>
+                                {{ form.control_owner }}
+                                {% if form.control_owner.errors %}<div class="text-danger small">{{ form.control_owner.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Last Tested Date</label>
+                                {{ form.last_tested_date }}
+                                {% if form.last_tested_date.errors %}<div class="text-danger small">{{ form.last_tested_date.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small fw-semibold">Weight Rationale</label>
+                                {{ form.weight_rationale }}
+                                {% if form.weight_rationale.errors %}<div class="text-danger small">{{ form.weight_rationale.errors }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-10">
+                                <div class="form-check">
+                                    {{ form.is_active }}
+                                    <label class="form-check-label small"><i class="fas fa-check-circle me-1"></i> Control is Active</label>
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-center justify-content-end">
+                                {{ form.DELETE }}
+                                <label class="form-check-label small text-danger ms-2"><i class="fas fa-trash-alt me-1"></i> Delete</label>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="alert alert-info py-2 small mt-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Control Types:</strong> Preventive (prevents occurrence), Detective (detects after), Corrective (corrects after), Directive (directs behavior). Each type has different effectiveness on likelihood vs impact reduction.
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="d-flex justify-content-between mb-5">
+            <a href="{% if is_edit %}{{ request.path }}?stage=1{% else %}{% url 'create_risk' %}?stage=1{% endif %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Stage 1
+            </a>
+            <div>
+                <button type="submit" name="action" value="park" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-save me-2"></i>Save as Draft
+                </button>
+                <button type="submit" name="action" value="submit" class="btn btn-success btn-lg">
+                    {% if is_edit %}
+                    <i class="fas fa-check me-2"></i>Update Risk
+                    {% else %}
+                    <i class="fas fa-check me-2"></i>Complete & Continue to Indicators
+                    {% endif %}
+                </button>
+            </div>
+        </div>
+    </form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add Control Button Handler
+    const addControlBtn = document.getElementById('addControlBtn');
+    const controlsContainer = document.getElementById('controls-container');
+    const totalFormsInput = document.getElementById('id_controls-TOTAL_FORMS');
+    
+    if (addControlBtn) {
+        addControlBtn.addEventListener('click', function() {
+            const currentFormCount = parseInt(totalFormsInput.value);
+            const newFormHtml = `
+                <div class="control-form border rounded p-3 mb-3 position-relative bg-light">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Control Name *</label>
+                            <input type="text" name="controls-${currentFormCount}-name" class="form-control" placeholder="E.g., Monthly reconciliation, Access control review">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Control Type *</label>
+                            <select name="controls-${currentFormCount}-control_type" class="form-select">
+                                <option value="">---------</option>
+                                <option value="preventive">Preventive - Prevents risk occurrence (80% likelihood, 20% impact)</option>
+                                <option value="detective">Detective - Detects risk after occurrence (30% likelihood, 70% impact)</option>
+                                <option value="corrective">Corrective - Corrects after occurrence (10% likelihood, 90% impact)</option>
+                                <option value="directive">Directive - Directs behavior (50% likelihood, 50% impact)</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Description</label>
+                            <textarea name="controls-${currentFormCount}-description" class="form-control" rows="3" placeholder="Describe how this control works..."></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Effectiveness (0-100%)</label>
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="range" name="controls-${currentFormCount}-effectiveness" class="form-control control-effectiveness-slider" min="0" max="100" step="1" value="0">
+                                <output class="badge bg-primary control-effectiveness-output">0%</output>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Weight (1-10)</label>
+                            <select name="controls-${currentFormCount}-weight" class="form-select">
+                                <option value="1">1 - Minimal importance</option>
+                                <option value="2">2 - Very low importance</option>
+                                <option value="3">3 - Low importance</option>
+                                <option value="4">4 - Below average importance</option>
+                                <option value="5" selected>5 - Average importance</option>
+                                <option value="6">6 - Above average importance</option>
+                                <option value="7">7 - Moderately high importance</option>
+                                <option value="8">8 - High importance</option>
+                                <option value="9">9 - Very high importance</option>
+                                <option value="10">10 - Critical importance</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Frequency</label>
+                            <input type="text" name="controls-${currentFormCount}-frequency" class="form-control" placeholder="E.g., Daily, Weekly, Continuous, Quarterly">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Control Owner</label>
+                            <select name="controls-${currentFormCount}-control_owner" class="form-select">
+                                <option value="">---------</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Last Tested Date</label>
+                            <input type="date" name="controls-${currentFormCount}-last_tested_date" class="form-control">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Weight Rationale</label>
+                            <textarea name="controls-${currentFormCount}-weight_rationale" class="form-control" rows="2" placeholder="Why is this control weighted at this level?"></textarea>
+                        </div>
+                        <div class="col-md-10">
+                            <div class="form-check">
+                                <input type="checkbox" name="controls-${currentFormCount}-is_active" class="form-check-input" checked>
+                                <label class="form-check-label small"><i class="fas fa-check-circle me-1"></i> Control is Active</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-center justify-content-end">
+                            <input type="checkbox" name="controls-${currentFormCount}-DELETE" class="form-check-input">
+                            <label class="form-check-label small text-danger ms-2"><i class="fas fa-trash-alt me-1"></i> Delete</label>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            controlsContainer.insertAdjacentHTML('beforeend', newFormHtml);
+            totalFormsInput.value = currentFormCount + 1;
+            
+            // Attach slider events to the new control
+            attachEffectivenessSliderEvents();
+        });
+    }
+    
+    // Effectiveness Slider Handler
+    function attachEffectivenessSliderEvents() {
+        const sliders = document.querySelectorAll('.control-effectiveness-slider');
+        sliders.forEach(slider => {
+            slider.addEventListener('input', function() {
+                const output = this.parentElement.querySelector('.control-effectiveness-output');
+                if (output) {
+                    output.textContent = this.value + '%';
+                }
+            });
+        });
+    }
+    
+    // Initialize on page load
+    attachEffectivenessSliderEvents();
+});
+</script>
+{% endblock %}

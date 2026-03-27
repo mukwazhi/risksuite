@@ -1,0 +1,66 @@
+{% extends 'admin/base_site.html' %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+<div class="module">
+  <h2>Overview</h2>
+  <ul>
+    <li><strong>Total mitigations:</strong> {{ total_mitigations }}</li>
+    <li><strong>Average completion:</strong> {{ avg_completion }}%</li>
+  </ul>
+</div>
+
+<div class="module">
+  <h2>By status</h2>
+  <table class="table">
+    <thead><tr><th>Status</th><th>Count</th></tr></thead>
+    <tbody>
+    {% for s in by_status %}
+      <tr><td>{{ s.status }}</td><td>{{ s.count }}</td></tr>
+    {% empty %}
+      <tr><td colspan="2">No data</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="module">
+  <h2>Top incomplete mitigations</h2>
+  <table class="table">
+    <thead><tr><th>Mitigation</th><th>Risk</th><th>Completion</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for m in top_incomplete %}
+      <tr>
+        <td><a href="{% url 'admin:riskregister_mitigation_change' m.pk %}">{{ m.action|truncatechars:60 }}</a></td>
+        <td>{{ m.risk.risk_id }}</td>
+        <td>{{ m.completion_percentage }}%</td>
+        <td>{{ m.status }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="4">No incomplete mitigations</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="module">
+  <h2>Recent progress logs</h2>
+  <table class="table">
+    <thead><tr><th>When</th><th>Mitigation</th><th>User</th><th>Action</th><th>Change</th></tr></thead>
+    <tbody>
+    {% for log in recent_logs %}
+      <tr>
+        <td>{{ log.created_at|timesince }} ago</td>
+        <td>{{ log.mitigation.action|truncatechars:60 }}</td>
+        <td>{{ log.user.get_full_name|default:log.user }}</td>
+        <td>{{ log.get_action_type_display }}</td>
+        <td>{{ log.completion_change }}%</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5">No logs</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

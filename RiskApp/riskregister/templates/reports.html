@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RiskMate ERP - Reports</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome (use stable CDN) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        /* Apply Django admin font stack and sizing across the page */
+        :root{
+            --admin-font-size:13px;
+            --admin-input-vertical:6px;
+            --admin-input-horizontal:8px;
+        }
+
+        html, body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+            font-size: var(--admin-font-size);
+            line-height: 1.4;
+            color: #222;
+            background-color: #f8f9fa;
+        }
+
+        /* Headings follow admin weight */
+        h1,h2,h3,h4,h5,h6{
+            font-weight:600;
+            line-height:1.25;
+            margin-top:0.5rem;
+            margin-bottom:0.5rem;
+        }
+
+        /* Keep page-specific visual tweaks */
+        .navbar-brand { font-size: 1.5rem; }
+        .breadcrumb { font-size: 0.875rem; }
+        .form-label { font-size: 0.9rem; margin-bottom: 0.5rem; }
+
+        /* Inputs / selects / textareas sized to match Django admin */
+        .form-control,
+        .form-select {
+            font-size: var(--admin-font-size);
+            padding: var(--admin-input-vertical) var(--admin-input-horizontal);
+            line-height: 1.4;
+            border-radius: 2px;
+            height: calc(1.6em + 2 * var(--admin-input-vertical));
+        }
+
+        textarea.form-control {
+            height: auto;
+            min-height: 96px;
+            padding: 8px;
+        }
+
+        /* Small variants */
+        .form-control-sm, .form-select-sm {
+            font-size: 12px;
+            padding: 4px 6px;
+            height: calc(1.4em + 8px);
+        }
+
+        /* Buttons / cards / tables use same base size */
+        .btn { font-size: var(--admin-font-size); padding: 6px 10px; border-radius: 4px; }
+        .card, .table, .nav, .list-group-item { font-size: var(--admin-font-size); }
+
+        /* Preserve existing styles from template */
+        .card { border-radius: 0.5rem; }
+        .stat-card { transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .risk-matrix { background: linear-gradient(135deg,#f8f9fa 0%,#e9ecef 100%); border-radius:0.5rem; min-height:300px; }
+
+        .risk-priority-high { border-left: 4px solid #dc3545; }
+        .risk-priority-medium { border-left: 4px solid #fd7e14; }
+        .risk-priority-low { border-left: 4px solid #198754; }
+
+        .risk-status-open { color: #dc3545; }
+        .risk-status-in-progress { color: #fd7e14; }
+        .risk-status-resolved { color: #198754; }
+        .risk-status-closed { color: #6c757d; }
+
+        .filter-section { background-color: #f8f9fa; border-radius: 0.5rem; padding: 1.25rem; }
+
+        .risk-table-row { transition: all 0.2s; }
+        .risk-table-row:hover { background-color: #f8f9fa; }
+
+        .pagination .page-link { border-radius: 0.375rem; margin: 0 0.1rem; }
+
+        /* Ensure table header/readability */
+        .table th { border-top: none; font-weight: 600; font-size: 0.875rem; color: #495057; }
+        
+        /* Report-specific styles */
+        .report-card {
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .report-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .report-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        .report-preview {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .report-summary-card {
+            border-left: 4px solid #0d6efd;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary border-bottom">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="#">
+                <i class="fas fa-shield-alt me-2"></i>
+                RiskMate ERP
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="Dashboard.html">
+                            <i class="fas fa-home me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="Viewall.html">
+                            <i class="fas fa-list-alt me-1"></i> Risk Register
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-cog me-1"></i> Administration
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">User Management</a></li>
+                            <li><a class="dropdown-item" href="#">Departments</a></li>
+                            <li><a class="dropdown-item" href="#">Risk Categories</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="#">
+                            <i class="fas fa-chart-bar me-1"></i> Reports
+                        </a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <div class="dropdown">
+                        <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-2 fs-5"></i>
+                            <span class="d-none d-sm-inline">John Smith</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Profile</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i> Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i> Sign Out</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-3">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-2 d-none d-lg-block bg-light border-end p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="text-uppercase text-muted fw-bold">Navigation</h6>
+                </div>
+                <ul class="nav nav-pills flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'dashboard' %}">
+                            <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'create_risk' %}">
+                            <i class="fas fa-plus-circle me-2"></i> New Risk
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'view_all_risks' %}">
+                            <i class="fas fa-list me-2"></i> All Risks
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-chart-pie me-2"></i> Risk Matrix
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-tasks me-2"></i> Mitigation Plans
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">
+                            <i class="fas fa-chart-bar me-2"></i> Reports
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="mt-4 pt-3 border-top">
+                    <h6 class="text-uppercase text-muted fw-bold small">Quick Stats</h6>
+                    <div class="mt-2">
+                        <div class="d-flex justify-content-between small">
+                            <span>Open Risks:</span>
+                            <span class="fw-bold">24</span>
+                        </div>
+                        <div class="d-flex justify-content-between small">
+                            <span>High Priority:</span>
+                            <span class="fw-bold text-danger">7</span>
+                        </div>
+                        <div class="d-flex justify-content-between small">
+                            <span>Due This Week:</span>
+                            <span class="fw-bold text-warning">3</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-lg-10 px-4">
+                <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
+                    <div>
+                        <h4 class="mb-1">Risk Reports</h4>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a href="Dashboard.html">Dashboard</a></li>
+                                <li class="breadcrumb-item active">Reports</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary btn-sm" id="refreshBtn">
+                            <i class="fas fa-sync-alt me-1"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Report Summary Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card report-summary-card border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title text-muted mb-2">Total Risks</h6>
+                                        <h3 class="mb-0">142</h3>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-exclamation-triangle text-primary fs-2"></i>
+                                    </div>
+                                </div>
+                                <p class="text-muted mb-0 mt-2 small">Across all departments</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card report-summary-card border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title text-muted mb-2">Outstanding Actions</h6>
+                                        <h3 class="mb-0">38</h3>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-tasks text-warning fs-2"></i>
+                                    </div>
+                                </div>
+                                <p class="text-muted mb-0 mt-2 small">Requiring attention</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card report-summary-card border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title text-muted mb-2">Overdue Mitigations</h6>
+                                        <h3 class="mb-0">12</h3>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-clock text-danger fs-2"></i>
+                                    </div>
+                                </div>
+                                <p class="text-muted mb-0 mt-2 small">Past due date</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card report-summary-card border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title text-muted mb-2">High Priority</h6>
+                                        <h3 class="mb-0">24</h3>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-arrow-up text-danger fs-2"></i>
+                                    </div>
+                                </div>
+                                <p class="text-muted mb-0 mt-2 small">Requires immediate action</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Types -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="mb-3">Available Reports</h5>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card report-card border-0 shadow-sm h-100" data-report-type="risk-register">
+                            <div class="card-body text-center">
+                                <div class="report-icon text-primary">
+                                    <i class="fas fa-file-alt"></i>
+                                </div>
+                                <h5 class="card-title">Risk Register Report</h5>
+                                <p class="card-text text-muted">Complete listing of all risks with details including risk ID, title, description, rating, owner and due date.</p>
+                            </div>
+                            <div class="card-footer bg-transparent text-center">
+                                <button class="btn btn-primary btn-sm generate-report" data-report-type="risk-register">
+                                    <i class="fas fa-download me-1"></i> Generate Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card report-card border-0 shadow-sm h-100" data-report-type="executive-summary">
+                            <div class="card-body text-center">
+                                <div class="report-icon text-success">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <h5 class="card-title">Executive Summary</h5>
+                                <p class="card-text text-muted">High-level overview of risk exposure, key metrics, and strategic recommendations for management.</p>
+                            </div>
+                            <div class="card-footer bg-transparent text-center">
+                                <button class="btn btn-primary btn-sm generate-report" data-report-type="executive-summary">
+                                    <i class="fas fa-download me-1"></i> Generate Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card report-card border-0 shadow-sm h-100" data-report-type="mitigation-status">
+                            <div class="card-body text-center">
+                                <div class="report-icon text-warning">
+                                    <i class="fas fa-tasks"></i>
+                                </div>
+                                <h5 class="card-title">Mitigation Status Report</h5>
+                                <p class="card-text text-muted">Detailed status of all mitigation actions, including overdue items and completion progress.</p>
+                            </div>
+                            <div class="card-footer bg-transparent text-center">
+                                <button class="btn btn-primary btn-sm generate-report" data-report-type="mitigation-status">
+                                    <i class="fas fa-download me-1"></i> Generate Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Filters -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0 fw-bold">
+                            <i class="fas fa-filter text-primary me-2"></i> Report Filters
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label for="reportDepartmentFilter" class="form-label">Department</label>
+                                <select class="form-select" id="reportDepartmentFilter">
+                                    <option value="">All Departments</option>
+                                    <option value="it">IT</option>
+                                    <option value="finance">Finance</option>
+                                    <option value="operations">Operations</option>
+                                    <option value="hr">Human Resources</option>
+                                    <option value="legal">Legal</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="reportPriorityFilter" class="form-label">Priority</label>
+                                <select class="form-select" id="reportPriorityFilter">
+                                    <option value="">All Priorities</option>
+                                    <option value="high">High</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="low">Low</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="reportStatusFilter" class="form-label">Status</label>
+                                <select class="form-select" id="reportStatusFilter">
+                                    <option value="">All Statuses</option>
+                                    <option value="open">Open</option>
+                                    <option value="in-progress">In Progress</option>
+                                    <option value="resolved">Resolved</option>
+                                    <option value="closed">Closed</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="reportDateRange" class="form-label">Date Range</label>
+                                <select class="form-select" id="reportDateRange">
+                                    <option value="all">All Time</option>
+                                    <option value="last-week">Last Week</option>
+                                    <option value="last-month">Last Month</option>
+                                    <option value="last-quarter">Last Quarter</option>
+                                    <option value="last-year">Last Year</option>
+                                    <option value="custom">Custom Range</option>
+                                </select>
+                            </div>
+                            <div class="col-12" id="customDateRange" style="display: none;">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label for="reportDateFrom" class="form-label">From Date</label>
+                                        <input type="date" class="form-control" id="reportDateFrom">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="reportDateTo" class="form-label">To Date</label>
+                                        <input type="date" class="form-control" id="reportDateTo">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button class="btn btn-outline-secondary" id="clearReportFiltersBtn">
+                                        <i class="fas fa-times me-1"></i> Clear Filters
+                                    </button>
+                                    <button class="btn btn-primary" id="applyReportFiltersBtn">
+                                        <i class="fas fa-filter me-1"></i> Apply Filters
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Preview -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold">
+                            <i class="fas fa-eye text-primary me-2"></i> Report Preview
+                        </h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" id="printPreviewBtn">
+                                <i class="fas fa-print me-1"></i> Print Preview
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="report-preview p-4" id="reportPreview">
+                            <!-- Report preview will be generated here -->
+                            <div class="text-center text-muted py-5">
+                                <i class="fas fa-file-pdf fa-3x mb-3"></i>
+                                <p>Select a report type and apply filters to generate a preview</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap & Popper JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+    
+    <!-- jsPDF library for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    
+    <script>
+        // Sample data for demonstration
+        const risksData = [
+            {
+                id: "R001",
+                title: "Data Security Breach",
+                description: "Potential unauthorized access to sensitive customer data",
+                rating: "High",
+                owner: "John Smith",
+                dueDate: "2023-12-15",
+                department: "IT",
+                category: "Security",
+                status: "Open",
+                priority: "High",
+                dateIdentified: "2023-10-01",
+                likelihood: "Medium",
+                impact: "High",
+                mitigationPlan: "Implement multi-factor authentication and regular security audits"
+            },
+            {
+                id: "R002",
+                title: "Supply Chain Disruption",
+                description: "Potential disruption in the supply chain due to geopolitical issues",
+                rating: "Medium",
+                owner: "Sarah Johnson",
+                dueDate: "2024-01-30",
+                department: "Operations",
+                category: "Operational",
+                status: "In Progress",
+                priority: "Medium",
+                dateIdentified: "2023-09-15",
+                likelihood: "Medium",
+                impact: "Medium",
+                mitigationPlan: "Diversify supplier base and increase inventory levels"
+            },
+            {
+                id: "R003",
+                title: "Regulatory Compliance Changes",
+                description: "Upcoming changes in industry regulations requiring system updates",
+                rating: "High",
+                owner: "Michael Brown",
+                dueDate: "2023-11-30",
+                department: "Legal",
+                category: "Compliance",
+                status: "Open",
+                priority: "High",
+                dateIdentified: "2023-08-20",
+                likelihood: "High",
+                impact: "High",
+                mitigationPlan: "Establish compliance task force and monitor regulatory updates"
+            },
+            {
+                id: "R004",
+                title: "Key Employee Turnover",
+                description: "Risk of losing key personnel in critical roles",
+                rating: "Medium",
+                owner: "Lisa Wilson",
+                dueDate: "2024-02-15",
+                department: "HR",
+                category: "Strategic",
+                status: "Open",
+                priority: "Medium",
+                dateIdentified: "2023-10-10",
+                likelihood: "Medium",
+                impact: "Medium",
+                mitigationPlan: "Implement retention programs and succession planning"
+            },
+            {
+                id: "R005",
+                title: "Technology Infrastructure Failure",
+                description: "Aging technology infrastructure may lead to system failures",
+                rating: "High",
+                owner: "Robert Davis",
+                dueDate: "2023-12-31",
+                department: "IT",
+                category: "Operational",
+                status: "In Progress",
+                priority: "High",
+                dateIdentified: "2023-07-05",
+                likelihood: "Low",
+                impact: "High",
+                mitigationPlan: "Upgrade critical systems and implement redundancy"
+            }
+        ];
+
+        // Function to generate report preview
+        function generateReportPreview(reportType, filteredRisks) {
+            const previewContainer = document.getElementById('reportPreview');
+            
+            if (filteredRisks.length === 0) {
+                previewContainer.innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-exclamation-circle fa-3x mb-3"></i>
+                        <p>No risks match the selected filters</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let previewHTML = '';
+            
+            if (reportType === 'risk-register') {
+                previewHTML = generateRiskRegisterPreview(filteredRisks);
+            } else if (reportType === 'executive-summary') {
+                previewHTML = generateExecutiveSummaryPreview(filteredRisks);
+            } else if (reportType === 'mitigation-status') {
+                previewHTML = generateMitigationStatusPreview(filteredRisks);
+            }
+            
+            previewContainer.innerHTML = previewHTML;
+        }
+        
+        // Function to generate risk register preview
+        function generateRiskRegisterPreview(risks) {
+            let html = `
+                <div class="report-header mb-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h3>Risk Register Report</h3>
+                            <p class="text-muted">Generated on ${new Date().toLocaleDateString()}</p>
+                        </div>
+                        <div class="text-end">
+                            <h4>RiskMate ERP</h4>
+                            <p class="text-muted">Comprehensive Risk Management</p>
+                        </div>
+                    </div>
+                    <hr>
+                </div>
+                
+                <div class="executive-summary mb-4">
+                    <h5>Executive Summary</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="card bg-light border-0">
+                                <div class="card-body p-3 text-center">
+                                    <h6 class="card-title">Total Risks</h6>
+                                    <h4 class="mb-0">${risks.length}</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light border-0">
+                                <div class="card-body p-3 text-center">
+                                    <h6 class="card-title">High Priority</h6>
+                                    <h4 class="mb-0 text-danger">${risks.filter(r => r.priority === 'high').length}</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light border-0">
+                                <div class="card-body p-3 text-center">
+                                    <h6 class="card-title">Outstanding Actions</h6>
+                                    <h4 class="mb-0 text-warning">${risks.filter(r => r.status !== 'closed').length}</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light border-0">
+                                <div class="card-body p-3 text-center">
+                                    <h6 class="card-title">Overdue Mitigations</h6>
+                                    <h4 class="mb-0 text-danger">${risks.filter(r => new Date(r.dueDate) < new Date() && r.status !== 'closed').length}</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="risk-details">
+                    <h5 class="mb-3">Risk Details</h5>
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Risk ID</th>
+                                <th>Risk Title</th>
+                                <th>Risk Description</th>
+                                <th>Risk Rating</th>
+                                <th>Risk Owner</th>
+                                <th>Due Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            risks.forEach(risk => {
+                const isOverdue = new Date(risk.dueDate) < new Date() && risk.status !== 'closed';
+                const dueDateClass = isOverdue ? 'text-danger' : '';
+                
+                html += `
+                    <tr>
+                        <td class="fw-bold">${risk.id}</td>
+                        <td>${risk.title}</td>
+                        <td>${risk.description}</td>
+                        <td>
+                            <span class="badge ${risk.rating === 'High' ? 'bg-danger' : risk.rating === 'Medium' ? 'bg-warning' : 'bg-success'}">
+                                ${risk.rating}
+                            </span>
+                        </td>
+                        <td>${risk.owner}</td>
+                        <td class="${dueDateClass}">${formatDate(risk.dueDate)}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="report-footer mt-4 pt-3 border-top">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="text-muted small">This report contains confidential information for internal use only.</p>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <p class="text-muted small">Page 1 of 1</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        // Function to generate executive summary preview
+        function generateExecutiveSummaryPreview(risks) {
+            const highRisks = risks.filter(r => r.priority === 'high');
+            const mediumRisks = risks.filter(r => r.priority === 'medium');
+            const lowRisks = risks.filter(r => r.priority === 'low');
+            
+            const openRisks = risks.filter(r => r.status === 'open');
+            const inProgressRisks = risks.filter(r => r.status === 'in-progress');
+            const overdueRisks = risks.filter(r => new Date(r.dueDate) < new Date() && r.status !== 'closed');
+            
+            let html = `
+                <div class="report-header mb-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h3>Executive Risk Summary</h3>
+                            <p class="text-muted">Generated on ${new Date().toLocaleDateString()}</p>
+                        </div>
+                        <div class="text-end">
+                            <h4>RiskMate ERP</h4>
+                            <p class="text-muted">Strategic Risk Overview</p>
+                        </div>
+                    </div>
+                    <hr>
+                </div>
+                
+                <div class="executive-overview mb-4">
+                    <h5>Risk Overview</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card border-0 bg-danger text-white">
+                                <div class="card-body p-3 text-center">
+                                    <h6 class="card-title">High Priority Risks</h6>
+                                    <h2 class="mb-0">${highRisks.length}</h2>
+                                    <p class="mb-0 small">Require immediate attention</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-0 bg-warning text-dark">
+                                <div class="card-body p-3 text-center">
+                                    <h6 class="card-title">Medium Priority Risks</h6>
+                                    <h2 class="mb-0">${mediumRisks.length}</h2>
+                                    <p class="mb-0 small">Monitor and plan mitigation</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-0 bg-success text-white">
+                                <div class="card-body p-3 text-center">
+                                    <h6 class="card-title">Low Priority Risks</h6>
+                                    <h2 class="mb-0">${lowRisks.length}</h2>
+                                    <p class="mb-0 small">Accept or transfer</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="risk-status mb-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Risk Status Distribution</h6>
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Open</span>
+                                    <span>${openRisks.length} (${Math.round(openRisks.length / risks.length * 100)}%)</span>
+                                </div>
+                                <div class="progress mb-2" style="height: 10px;">
+                                    <div class="progress-bar bg-danger" style="width: ${openRisks.length / risks.length * 100}%"></div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>In Progress</span>
+                                    <span>${inProgressRisks.length} (${Math.round(inProgressRisks.length / risks.length * 100)}%)</span>
+                                </div>
+                                <div class="progress mb-2" style="height: 10px;">
+                                    <div class="progress-bar bg-warning" style="width: ${inProgressRisks.length / risks.length * 100}%"></div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Resolved/Closed</span>
+                                    <span>${risks.length - openRisks.length - inProgressRisks.length} (${Math.round((risks.length - openRisks.length - inProgressRisks.length) / risks.length * 100)}%)</span>
+                                </div>
+                                <div class="progress mb-2" style="height: 10px;">
+                                    <div class="progress-bar bg-success" style="width: ${(risks.length - openRisks.length - inProgressRisks.length) / risks.length * 100}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Key Risk Indicators</h6>
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Total Risks Identified:</span>
+                                    <span class="fw-bold">${risks.length}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Overdue Mitigations:</span>
+                                    <span class="fw-bold text-danger">${overdueRisks.length}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Risks Due This Month:</span>
+                                    <span class="fw-bold text-warning">${risks.filter(r => {
+                                        const dueDate = new Date(r.dueDate);
+                                        const now = new Date();
+                                        return dueDate.getMonth() === now.getMonth() && 
+                                               dueDate.getFullYear() === now.getFullYear() &&
+                                               r.status !== 'closed';
+                                    }).length}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Average Risk Score:</span>
+                                    <span class="fw-bold">
+                                        ${(risks.reduce((sum, risk) => {
+                                            let score = 0;
+                                            if (risk.rating === 'High') score = 3;
+                                            else if (risk.rating === 'Medium') score = 2;
+                                            else score = 1;
+                                            return sum + score;
+                                        }, 0) / risks.length).toFixed(1)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="top-risks mb-4">
+                    <h5>Top 5 High Priority Risks</h5>
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Risk ID</th>
+                                <th>Title</th>
+                                <th>Department</th>
+                                <th>Owner</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            highRisks.slice(0, 5).forEach(risk => {
+                const isOverdue = new Date(risk.dueDate) < new Date() && risk.status !== 'closed';
+                const dueDateClass = isOverdue ? 'text-danger' : '';
+                
+                html += `
+                    <tr>
+                        <td class="fw-bold">${risk.id}</td>
+                        <td>${risk.title}</td>
+                        <td>${risk.department}</td>
+                        <td>${risk.owner}</td>
+                        <td class="${dueDateClass}">${formatDate(risk.dueDate)}</td>
+                        <td>
+                            <span class="badge ${risk.status === 'open' ? 'bg-danger' : risk.status === 'in-progress' ? 'bg-warning' : 'bg-success'}">
+                                ${risk.status.charAt(0).toUpperCase() + risk.status.slice(1).replace('-', ' ')}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="recommendations">
+                    <h5>Strategic Recommendations</h5>
+                    <ul>
+                        <li>Allocate additional resources to address the ${highRisks.length} high priority risks</li>
+                        <li>Establish a risk review committee to monitor progress on mitigation plans</li>
+                        <li>Implement a risk awareness program to improve risk identification across departments</li>
+                        <li>Review and update risk appetite statement based on current risk profile</li>
+                    </ul>
+                </div>
+                
+                <div class="report-footer mt-4 pt-3 border-top">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="text-muted small">This report contains confidential information for executive review only.</p>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <p class="text-muted small">Page 1 of 1</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        // Function to generate mitigation status preview
+        function generateMitigationStatusPreview(risks) {
+            const overdueRisks = risks.filter(r => new Date(r.dueDate) < new Date() && r.status !== 'closed');
+            const dueSoonRisks = risks.filter(r => {
+                const dueDate = new Date(r.dueDate);
+                const now = new Date();
+                const daysDiff = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+                return daysDiff <= 30 && daysDiff > 0 && r.status !== 'closed';
+            });
+            
+            let html = `
+                <div class="report-header mb-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h3>Mitigation Status Report</h3>
+                            <p class="text-muted">Generated on ${new Date().toLocaleDateString()}</p>
+                        </div>
+                        <div class="text-end">
+                            <h4>RiskMate ERP</h4>
+                            <p class="text-muted">Action Tracking and Compliance</p>
+                        </div>
+                    </div>
+                    <hr>
+                </div>
+                
+                <div class="mitigation-overview mb-4">
+                    <h5>Mitigation Overview</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card border-0 bg-danger text-white">
+                                <div class="card-body p-3 text-center">
+                                    <h6 class="card-title">Overdue Actions</h6>
+                                    <h2 class="mb-0">${overdueRisks.length}</h2>
+                                    <p class="mb-0 small">Require immediate attention</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-0 bg-warning text-dark">
+                                <div class="card-body p-3 text-center">
+                                    <h6 class="card-title">Due Within 30 Days</h6>
+                                    <h2 class="mb-0">${dueSoonRisks.length}</h2>
+                                    <p class="mb-0 small">Monitor closely</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-0 bg-success text-white">
+                                <div class="card-body p-3 text-center">
+                                    <h6 class="card-title">On Track</h6>
+                                    <h2 class="mb-0">${risks.length - overdueRisks.length - dueSoonRisks.length}</h2>
+                                    <p class="mb-0 small">Currently on schedule</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mitigation-details">
+                    <h5 class="mb-3">Mitigation Action Details</h5>
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Risk ID</th>
+                                <th>Risk Title</th>
+                                <th>Mitigation Plan</th>
+                                <th>Owner</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                                <th>Days Remaining</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            risks.forEach(risk => {
+                const dueDate = new Date(risk.dueDate);
+                const now = new Date();
+                const daysDiff = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+                
+                let statusBadge = '';
+                let daysRemaining = '';
+                
+                if (risk.status === 'closed') {
+                    statusBadge = '<span class="badge bg-success">Completed</span>';
+                    daysRemaining = 'N/A';
+                } else if (daysDiff < 0) {
+                    statusBadge = '<span class="badge bg-danger">Overdue</span>';
+                    daysRemaining = `<span class="text-danger">${Math.abs(daysDiff)} days overdue</span>`;
+                } else if (daysDiff <= 7) {
+                    statusBadge = '<span class="badge bg-warning">Due Soon</span>';
+                    daysRemaining = `<span class="text-warning">${daysDiff} days</span>`;
+                } else {
+                    statusBadge = '<span class="badge bg-primary">On Track</span>';
+                    daysRemaining = `${daysDiff} days`;
+                }
+                
+                html += `
+                    <tr>
+                        <td class="fw-bold">${risk.id}</td>
+                        <td>${risk.title}</td>
+                        <td>${risk.mitigationPlan}</td>
+                        <td>${risk.owner}</td>
+                        <td>${formatDate(risk.dueDate)}</td>
+                        <td>${statusBadge}</td>
+                        <td>${daysRemaining}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="report-footer mt-4 pt-3 border-top">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="text-muted small">This report contains confidential information for action tracking purposes.</p>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <p class="text-muted small">Page 1 of 1</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        // Function to format date
+        function formatDate(dateString) {
+            const options = { day: 'numeric', month: 'short', year: 'numeric' };
+            return new Date(dateString).toLocaleDateString('en-US', options);
+        }
+        
+        // Function to apply report filters
+        function applyReportFilters() {
+            const departmentFilter = document.getElementById('reportDepartmentFilter').value;
+            const priorityFilter = document.getElementById('reportPriorityFilter').value;
+            const statusFilter = document.getElementById('reportStatusFilter').value;
+            const dateRange = document.getElementById('reportDateRange').value;
+            const dateFrom = document.getElementById('reportDateFrom').value;
+            const dateTo = document.getElementById('reportDateTo').value;
+            
+            let filteredRisks = risksData.filter(risk => {
+                // Department filter
+                if (departmentFilter && risk.department.toLowerCase() !== departmentFilter) return false;
+                
+                // Priority filter
+                if (priorityFilter && risk.priority !== priorityFilter) return false;
+                
+                // Status filter
+                if (statusFilter && risk.status !== statusFilter) return false;
+                
+                // Date range filter
+                if (dateRange !== 'all' && dateRange !== 'custom') {
+                    const riskDate = new Date(risk.dateIdentified);
+                    const now = new Date();
+                    let startDate;
+                    
+                    switch(dateRange) {
+                        case 'last-week':
+                            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                            break;
+                        case 'last-month':
+                            startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+                            break;
+                        case 'last-quarter':
+                            startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+                            break;
+                        case 'last-year':
+                            startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+                            break;
+                    }
+                    
+                    if (riskDate < startDate) return false;
+                }
+                
+                // Custom date range
+                if (dateRange === 'custom') {
+                    const riskDate = new Date(risk.dateIdentified);
+                    if (dateFrom && riskDate < new Date(dateFrom)) return false;
+                    if (dateTo && riskDate > new Date(dateTo)) return false;
+                }
+                
+                return true;
+            });
+            
+            // Get the active report type
+            const activeReportCard = document.querySelector('.report-card.active');
+            const reportType = activeReportCard ? activeReportCard.getAttribute('data-report-type') : 'risk-register';
+            
+            generateReportPreview(reportType, filteredRisks);
+        }
+        
+        // Function to clear report filters
+        function clearReportFilters() {
+            document.getElementById('reportDepartmentFilter').value = '';
+            document.getElementById('reportPriorityFilter').value = '';
+            document.getElementById('reportStatusFilter').value = '';
+            document.getElementById('reportDateRange').value = 'all';
+            document.getElementById('reportDateFrom').value = '';
+            document.getElementById('reportDateTo').value = '';
+            document.getElementById('customDateRange').style.display = 'none';
+            
+            // Reset to default report preview
+            document.getElementById('reportPreview').innerHTML = `
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-file-pdf fa-3x mb-3"></i>
+                    <p>Select a report type and apply filters to generate a preview</p>
+                </div>
+            `;
+        }
+        
+        // Function to generate PDF report
+        function generatePDFReport(reportType) {
+            // Get filtered risks based on current filters
+            const departmentFilter = document.getElementById('reportDepartmentFilter').value;
+            const priorityFilter = document.getElementById('reportPriorityFilter').value;
+            const statusFilter = document.getElementById('reportStatusFilter').value;
+            const dateRange = document.getElementById('reportDateRange').value;
+            const dateFrom = document.getElementById('reportDateFrom').value;
+            const dateTo = document.getElementById('reportDateTo').value;
+            
+            let filteredRisks = risksData.filter(risk => {
+                // Department filter
+                if (departmentFilter && risk.department.toLowerCase() !== departmentFilter) return false;
+                
+                // Priority filter
+                if (priorityFilter && risk.priority !== priorityFilter) return false;
+                
+                // Status filter
+                if (statusFilter && risk.status !== statusFilter) return false;
+                
+                // Date range filter
+                if (dateRange !== 'all' && dateRange !== 'custom') {
+                    const riskDate = new Date(risk.dateIdentified);
+                    const now = new Date();
+                    let startDate;
+                    
+                    switch(dateRange) {
+                        case 'last-week':
+                            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                            break;
+                        case 'last-month':
+                            startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+                            break;
+                        case 'last-quarter':
+                            startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+                            break;
+                        case 'last-year':
+                            startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+                            break;
+                    }
+                    
+                    if (riskDate < startDate) return false;
+                }
+                
+                // Custom date range
+                if (dateRange === 'custom') {
+                    const riskDate = new Date(risk.dateIdentified);
+                    if (dateFrom && riskDate < new Date(dateFrom)) return false;
+                    if (dateTo && riskDate > new Date(dateTo)) return false;
+                }
+                
+                return true;
+            });
+            
+            // Use jsPDF to generate PDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Add header
+            doc.setFontSize(20);
+            doc.setTextColor(40, 40, 40);
+            doc.text('RiskMate ERP', 20, 20);
+            doc.setFontSize(12);
+            doc.setTextColor(100, 100, 100);
+            
+            let reportTitle = '';
+            if (reportType === 'risk-register') {
+                reportTitle = 'Risk Register Report';
+            } else if (reportType === 'executive-summary') {
+                reportTitle = 'Executive Risk Summary';
+            } else if (reportType === 'mitigation-status') {
+                reportTitle = 'Mitigation Status Report';
+            }
+            
+            doc.text(reportTitle, 20, 30);
+            doc.text(`Generated on ${new Date().toLocaleDateString()}`, 20, 37);
+            
+            // Add summary section
+            doc.setFontSize(14);
+            doc.setTextColor(40, 40, 40);
+            doc.text('Executive Summary', 20, 55);
+            doc.setFontSize(10);
+            doc.setTextColor(100, 100, 100);
+            
+            const totalRisks = filteredRisks.length;
+            const highRisks = filteredRisks.filter(r => r.priority === 'high').length;
+            const overdueRisks = filteredRisks.filter(r => new Date(r.dueDate) < new Date() && r.status !== 'closed').length;
+            
+            doc.text(`Total Risks: ${totalRisks}`, 20, 65);
+            doc.text(`High Priority Risks: ${highRisks}`, 20, 72);
+            doc.text(`Overdue Mitigations: ${overdueRisks}`, 20, 79);
+            
+            // Add risk table
+            doc.setFontSize(14);
+            doc.setTextColor(40, 40, 40);
+            doc.text('Risk Details', 20, 95);
+            
+            // Prepare table data
+            const tableData = [];
+            filteredRisks.forEach(risk => {
+                tableData.push([
+                    risk.id,
+                    risk.title,
+                    risk.description,
+                    risk.rating,
+                    risk.owner,
+                    formatDate(risk.dueDate)
+                ]);
+            });
+            
+            // Add table using autoTable plugin
+            doc.autoTable({
+                startY: 100,
+                head: [['Risk ID', 'Risk Title', 'Risk Description', 'Risk Rating', 'Risk Owner', 'Due Date']],
+                body: tableData,
+                theme: 'grid',
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [66, 139, 202] }
+            });
+            
+            // Save the PDF
+            doc.save(`${reportTitle.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`);
+        }
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners to report cards
+            document.querySelectorAll('.report-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    // Remove active class from all cards
+                    document.querySelectorAll('.report-card').forEach(c => {
+                        c.classList.remove('active');
+                        c.style.border = '';
+                    });
+                    
+                    // Add active class to clicked card
+                    this.classList.add('active');
+                    this.style.border = '2px solid #0d6efd';
+                    
+                    // Apply current filters to generate preview
+                    applyReportFilters();
+                });
+            });
+            
+            // Add event listeners to generate report buttons
+            document.querySelectorAll('.generate-report').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const reportType = this.getAttribute('data-report-type');
+                    generatePDFReport(reportType);
+                });
+            });
+            
+            // Add event listeners to filter buttons
+            document.getElementById('applyReportFiltersBtn').addEventListener('click', applyReportFilters);
+            document.getElementById('clearReportFiltersBtn').addEventListener('click', clearReportFilters);
+            
+            // Show/hide custom date range
+            document.getElementById('reportDateRange').addEventListener('change', function() {
+                if (this.value === 'custom') {
+                    document.getElementById('customDateRange').style.display = 'block';
+                } else {
+                    document.getElementById('customDateRange').style.display = 'none';
+                }
+            });
+            
+            // Refresh button functionality
+            document.getElementById('refreshBtn').addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                icon.classList.remove('fa-sync-alt');
+                icon.classList.add('fa-spinner', 'fa-spin');
+                
+                setTimeout(() => {
+                    icon.classList.remove('fa-spinner', 'fa-spin');
+                    icon.classList.add('fa-sync-alt');
+                    alert('Report data refreshed!');
+                }, 1500);
+            });
+            
+            // Print preview button functionality
+            document.getElementById('printPreviewBtn').addEventListener('click', function() {
+                const previewContent = document.getElementById('reportPreview').innerHTML;
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>RiskMate ERP - Report Print</title>
+                        <style>
+                             body { font-family: Arial, sans-serif; margin: 20px; }
+                            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                            th { background-color: #f2f2f2; }
+                            .report-header { margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+                            .executive-summary { margin-bottom: 20px; }
+                            .card { margin-bottom: 10px; padding: 10px; border-radius: 5px; }
+                            .bg-danger { background-color: #dc3545; color: white; }
+                            .bg-warning { background-color: #ffc107; color: black; }
+                            .bg-success { background-color: #198754; color: white; }
+                            .bg-primary { background-color: #0d6efd; color: white; }
+                            .progress { height: 10px; background-color: #e9ecef; border-radius: 5px; overflow: hidden; }
+                            .progress-bar { height: 100%; }
+                            .text-danger { color: #dc3545; }
+                            .text-warning { color: #ffc107; }
+                            .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+                            .bg-danger { background-color: #dc3545; }
+                            .bg-warning { background-color: #ffc107; }
+                            .bg-success { background-color: #198754; }
+                            .bg-primary { background-color: #0d6efd; }
+                        </style>
+                    </head>
+                    <body>
+                        ${previewContent}
+                    </body>
+                    </html>
+                `);
+                printWindow.document.close();
+                printWindow.print();
+            });
+        });
+    </script>
+</body>
+</html>

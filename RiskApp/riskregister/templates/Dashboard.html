@@ -1,0 +1,512 @@
+{% extends "base.html" %}
+{% load static math_extras %}
+
+{% block title %}Dashboard - RiskMate ERP{% endblock %}
+
+{% block show_messages %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .risk-matrix { background: linear-gradient(135deg,#f8f9fa 0%,#e9ecef 100%); border-radius:0.5rem; min-height:300px; }
+    #container { max-width:100%; margin:auto; }
+    #riskHistogram { max-width:100%; margin:auto; }
+    #risksPerDepartment { max-width:100%; margin:auto; }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
+        <div>
+            <h4 class="mb-1">Risk Management Dashboard</h4>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item active">Dashboard</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-primary btn-sm" href="{% url 'all_risks' %}">
+                <i class="fas fa-list-alt me-1"></i> View All
+            </a>
+            <button class="btn btn-outline-secondary btn-sm" id="dashboardRefreshBtn">
+                <i class="fas fa-sync-alt me-1"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100 stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-title text-muted text-uppercase small">Weighted Risk Score</h6>
+                            <h3 class="fw-bold mb-0">{{ overall_weighted_average }} / 25</h3>
+                            <span class="badge small {% if overall_weighted_average >= 20 %}bg-danger{% elif overall_weighted_average >= 15 %}bg-danger{% elif overall_weighted_average >= 8 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                Weighted total: {{ overall_weighted_total }}
+                            </span>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-weight-hanging text-primary fs-5"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100 stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-title text-muted text-uppercase small">High Priority</h6>
+                            <h3 class="fw-bold mb-0 text-danger">{{ high_count }}</h3>
+                            <span class="badge bg-danger bg-opacity-10 text-danger small">
+                                <i class="fas fa-exclamation-circle me-1"></i> Needs attention
+                            </span>
+                        </div>
+                        <div class="bg-danger bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-exclamation-triangle text-danger fs-5"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100 stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="card-title text-muted text-uppercase small">Mitigation Plans</h6>
+                            <h3 class="fw-bold mb-0">{{ total_mitigations }}</h3>
+                            <span class="badge bg-warning bg-opacity-10 text-warning small">
+                                <i class="fas fa-clock me-1"></i> {{ risks_without_mitigations }} pending
+                            </span>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-tasks text-warning fs-5"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100 stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h6 class="card-title text-muted text-uppercase small">Workflow Status</h6>
+                        </div>
+                        <div class="bg-info bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-project-diagram text-info fs-5"></i>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <a href="{% url 'pending_risks' %}" class="text-decoration-none d-flex align-items-center justify-content-between">
+                            <span class="text-dark">
+                                <i class="fas fa-clock me-2 text-warning"></i>Awaiting Review
+                            </span>
+                            <span class="badge bg-warning text-dark">{{ pending_count }}</span>
+                        </a>
+                    </div>
+                    <div>
+                        <a href="{% url 'rejected_risks' %}" class="text-decoration-none d-flex align-items-center justify-content-between">
+                            <span class="text-dark">
+                                <i class="fas fa-times-circle me-2 text-danger"></i>Rejected
+                            </span>
+                            <span class="badge bg-danger">{{ rejected_count }}</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+   
+    
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <!-- Stacked Histogram - Risks by Department and Severity -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-chart-bar text-primary me-2"></i> Risks by Department & Severity
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="risk-matrix d-flex align-items-center justify-content-center p-4">
+                        <figure class="highcharts-figure w-100">
+                            <div id="riskHistogram" style="width:100%; height:400px; margin:0;"></div>
+                        </figure>
+                    </div>
+                    
+                    <!-- Legend Explanation -->
+                    <div class="mt-3 p-3 bg-light rounded">
+                        <h6 class="fw-semibold mb-2 small">Risk Severity Levels:</h6>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="d-flex align-items-center">
+                                <span class="badge" style="background-color: #27ae60; width: 20px; height: 20px;"></span>
+                                <small class="ms-2"><strong>Low:</strong> Score 1-7</small>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <span class="badge" style="background-color: #f39c12; width: 20px; height: 20px;"></span>
+                                <small class="ms-2"><strong>Medium:</strong> Score 8-14</small>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <span class="badge" style="background-color: #e74c3c; width: 20px; height: 20px;"></span>
+                                <small class="ms-2"><strong>High:</strong> Score 15-19</small>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <span class="badge" style="background-color: #c0392b; width: 20px; height: 20px;"></span>
+                                <small class="ms-2"><strong>Critical:</strong> Score 20-25</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Required Panel -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-bell text-primary me-2"></i> Action Required
+                    </h5>
+                </div>
+                <div class="card-body p-0" style="max-height: 480px; overflow-y: auto;">
+                    {% if overdue_mitigations %}
+                    <div class="px-3 py-2 bg-danger bg-opacity-10 border-bottom">
+                        <h6 class="mb-0 text-danger small fw-bold">
+                            <i class="fas fa-exclamation-triangle me-1"></i> Overdue Mitigations ({{ overdue_mitigations|length }})
+                        </h6>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for mitigation in overdue_mitigations %}
+                        {% if mitigation.risk.risk_id %}
+                        <a href="{% url 'risk_detail' mitigation.risk.risk_id %}" class="list-group-item list-group-item-action border-0 py-2 px-3">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-times-circle text-danger"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-2">
+                                    <h6 class="mb-1 fw-semibold small">{{ mitigation.risk.title|truncatewords:8 }}</h6>
+                                    <p class="mb-1 small text-muted">{{ mitigation.action|truncatewords:10 }}</p>
+                                    <small class="text-danger">
+                                        <i class="fas fa-calendar-times me-1"></i> Due: {{ mitigation.due_date }}
+                                        <span class="badge bg-danger ms-1">{{ overdue_days_map|get_item:mitigation.pk }} days overdue</span>
+                                    </small>
+                                </div>
+                                <div class="flex-shrink-0 ms-2">
+                                    <i class="fas fa-chevron-right text-muted small"></i>
+                                </div>
+                            </div>
+                        </a>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-3 text-center text-muted">
+                        <i class="fas fa-check-circle text-success fs-3"></i>
+                        <p class="mb-0 mt-2">No overdue mitigations at this time.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inherent vs Residual Risk Analysis Section -->
+    {% if total_risks_with_inherent > 0 %}
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-chart-line text-primary me-2"></i> Inherent vs Residual Risk Analysis
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Summary Statistics -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <div class="p-3 bg-light rounded">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <h6 class="text-muted small mb-0">Risks with Inherent Data</h6>
+                                    <i class="fas fa-database text-primary"></i>
+                                </div>
+                                <h3 class="mb-0 fw-bold">{{ total_risks_with_inherent }}</h3>
+                                <small class="text-muted">of {{ total_risks }} total risks</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-success bg-opacity-10 rounded">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <h6 class="text-muted small mb-0">Avg Risk Reduction</h6>
+                                    <i class="fas fa-arrow-down text-success"></i>
+                                </div>
+                                <h3 class="mb-0 fw-bold text-success">{{ avg_risk_reduction }}%</h3>
+                                <small class="text-muted">from controls</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-info bg-opacity-10 rounded">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <h6 class="text-muted small mb-0">Active Controls</h6>
+                                    <i class="fas fa-shield-alt text-info"></i>
+                                </div>
+                                <h3 class="mb-0 fw-bold text-info">{{ total_controls }}</h3>
+                                <small class="text-muted">across all risks</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3 bg-warning bg-opacity-10 rounded">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <h6 class="text-muted small mb-0">Control Effectiveness</h6>
+                                    <i class="fas fa-percentage text-warning"></i>
+                                </div>
+                                <h3 class="mb-0 fw-bold text-warning">{{ avg_control_effectiveness }}%</h3>
+                                <small class="text-muted">average effectiveness</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Control Type Distribution -->
+                    {% if control_types %}
+                    <div class="mb-4">
+                        <h6 class="fw-semibold mb-3">Control Type Distribution</h6>
+                        <div class="row g-3">
+                            {% for ct in control_types %}
+                            <div class="col-md-3">
+                                <div class="p-3 border rounded">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <span class="text-capitalize fw-semibold">{{ ct.control_type }}</span>
+                                        <span class="badge bg-primary">{{ ct.count }}</span>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar" role="progressbar" 
+                                             style="width: {{ ct.avg_effectiveness }}%;" 
+                                             aria-valuenow="{{ ct.avg_effectiveness }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">{{ ct.avg_effectiveness|floatformat:1 }}% avg effectiveness</small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- High Priority Risks with Inherent/Residual Comparison removed -->
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Full High & Critical Risks Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="fas fa-exclamation-triangle text-danger me-2"></i> High & Critical Risks — Full Details</h5>
+                    <a href="{% url 'all_risks' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-list me-1"></i> View All Risks
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    {% if high_risks %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Risk ID</th>
+                                    <th>Title</th>
+                                    <th>Department</th>
+                                    <th>Owner</th>
+                                    <th>Score</th>
+                                    <th>Priority</th>
+                                    <th class="text-end">Created At</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for r in high_risks %}
+                                <tr>
+                                    <td class="align-middle">{{ r.risk_id }}</td>
+                                    <td class="align-middle">{% if r.risk_id %}<a href="{% url 'risk_detail' r.risk_id %}" class="text-decoration-none">{{ r.title|truncatechars:120 }}</a>{% else %}{{ r.title|truncatechars:120 }}{% endif %}</td>
+                                    <td class="align-middle">{% if r.department %}{{ r.department.name }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                                    <td class="align-middle">{% if r.risk_owner %}{{ r.risk_owner.name }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                                    <td class="align-middle">{{ r.score }}</td>
+                                    <td class="align-middle">
+                                        {% if r.score|default:0 >= 20 %}
+                                            <span class="badge bg-danger">Critical</span>
+                                        {% elif r.score|default:0 >= 15 %}
+                                            <span class="badge bg-danger">High</span>
+                                        {% elif r.score|default:0 >= 8 %}
+                                            <span class="badge bg-warning">Medium</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Low</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="align-middle text-end small text-nowrap">
+                                        {% if r.created_at %}{{ r.created_at|date:"Y-m-d" }}{% else %}<span class="text-muted">—</span>{% endif %}
+                                    </td>
+                                    <td class="align-middle text-end">
+                                        {% if r.risk_id %}
+                                            <a href="{% url 'risk_detail' r.risk_id %}" class="btn btn-sm btn-outline-primary">View</a>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-outline-secondary" disabled>View</button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                        <div class="p-3 text-center text-muted">
+                            <i class="fas fa-check-circle text-success fs-3"></i>
+                            <p class="mb-0 mt-2">No high or critical risks at this time.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Highcharts libraries -->
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Data from Django backend
+        const risksByDepartment = {{ risks_by_dept_severity|safe|default:'{}' }};
+
+        // Helper to show friendly message in the chart container
+        function showEmptyMessage(msg) {
+            const container = document.getElementById('riskHistogram');
+            if (container) container.innerHTML = '<div class="text-center text-muted p-4">' + msg + '</div>';
+        }
+
+        // Initialize the histogram (assumes Highcharts available)
+        function initHistogram() {
+            try {
+                const departments = Object.keys(risksByDepartment || {});
+                console.log('risksByDepartment:', risksByDepartment);
+                console.log('departments:', departments);
+
+                if (!departments || departments.length === 0) {
+                    showEmptyMessage('No approved risks grouped by department to display.');
+                    return;
+                }
+
+                const lowRisks = departments.map(dept => risksByDepartment[dept].low || 0);
+                const mediumRisks = departments.map(dept => risksByDepartment[dept].medium || 0);
+                const highRisks = departments.map(dept => risksByDepartment[dept].high || 0);
+                const criticalRisks = departments.map(dept => risksByDepartment[dept].critical || 0);
+
+                Highcharts.chart('riskHistogram', {
+                    chart: { type: 'column', backgroundColor: 'transparent' },
+                    title: { text: 'Risk Distribution by Department and Severity Level', style: { fontSize: '16px', fontWeight: 'bold' } },
+                    subtitle: { text: 'Stacked view showing risk severity across departments' },
+                    xAxis: { categories: departments, title: { text: 'Department' }, crosshair: true },
+                    yAxis: { min: 0, title: { text: 'Number of Risks' }, stackLabels: { enabled: true, style: { fontWeight: 'bold', color: 'gray' }, formatter: function() { return this.total > 0 ? this.total : ''; } } },
+                    legend: { align: 'center', verticalAlign: 'bottom', backgroundColor: 'white', borderColor: '#CCC', borderWidth: 1, shadow: false },
+                    tooltip: { headerFormat: '<b>{point.x}</b><br/>', pointFormat: '{series.name}: {point.y}<br/>Total: {point.stackTotal}' },
+                    plotOptions: { column: { stacking: 'normal', dataLabels: { enabled: true, formatter: function() { return this.y > 0 ? this.y : ''; }, style: { fontWeight: 'bold', color: 'white', textOutline: '1px contrast' } } } },
+                    series: [ { name: 'Critical (20-25)', data: criticalRisks, color: '#c0392b' }, { name: 'High (15-19)', data: highRisks, color: '#e74c3c' }, { name: 'Medium (8-14)', data: mediumRisks, color: '#f39c12' }, { name: 'Low (1-7)', data: lowRisks, color: '#27ae60' } ],
+                    credits: { enabled: false },
+                    accessibility: { enabled: true, point: { valueSuffix: ' risks' } }
+                });
+            } catch (e) {
+                console.error('Error initializing histogram:', e);
+                showEmptyMessage('Unable to render chart. See console for details.');
+            }
+        }
+
+        // Load a script and return a Promise
+        function loadScript(url) {
+            return new Promise(function(resolve, reject) {
+                const s = document.createElement('script');
+                s.src = url;
+                s.onload = () => resolve();
+                s.onerror = () => reject(new Error('Failed to load ' + url));
+                document.head.appendChild(s);
+            });
+        }
+
+        // Ensure Highcharts is available, otherwise attempt multiple CDNs and load gracefully
+        if (typeof Highcharts === 'undefined') {
+            console.warn('Highcharts not found; attempting to load from multiple CDNs...');
+            const cdnUrls = [
+                '{% static "vendor/highcharts/highcharts.js" %}',
+                'https://code.highcharts.com/highcharts.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.1.0/highcharts.min.js',
+                'https://cdn.jsdelivr.net/npm/highcharts@11.1.0/highcharts.min.js'
+            ];
+
+            let attempt = 0;
+            function tryLoadNext() {
+                if (attempt >= cdnUrls.length) {
+                    console.error('All Highcharts CDN attempts failed');
+                    showEmptyMessage('Chart library failed to load from CDN. Check network or open /debug/risks-by-dept/ to confirm data.');
+                    return;
+                }
+                const url = cdnUrls[attempt++];
+                console.log('Attempting to load Highcharts from:', url);
+                loadScript(url)
+                    .then(() => {
+                        // Try to load optional modules (best-effort) but ignore failures
+                        Promise.all([
+                            loadScript('https://code.highcharts.com/modules/exporting.js').catch(() => {}),
+                            loadScript('https://code.highcharts.com/modules/export-data.js').catch(() => {}),
+                            loadScript('https://code.highcharts.com/modules/accessibility.js').catch(() => {})
+                        ]).finally(() => {
+                            try {
+                                initHistogram();
+                            } catch (e) {
+                                console.error('Init after load failed:', e);
+                                showEmptyMessage('Chart initialization failed. Check console for details.');
+                            }
+                        });
+                    })
+                    .catch(err => {
+                        console.warn('Failed to load Highcharts from', url, err);
+                        tryLoadNext();
+                    });
+            }
+
+            tryLoadNext();
+        } else {
+            initHistogram();
+        }
+
+        // Dashboard UI interactions (refresh button)
+        const refreshBtn = document.getElementById('dashboardRefreshBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                if (icon) {
+                    icon.classList.remove('fa-sync-alt');
+                    icon.classList.add('fa-spinner', 'fa-spin');
+                }
+                setTimeout(() => { window.location.reload(); }, 500);
+            });
+        }
+    });
+</script>
+{% endblock %}

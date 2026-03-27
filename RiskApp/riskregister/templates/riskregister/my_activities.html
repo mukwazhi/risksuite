@@ -1,0 +1,661 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Activities - RiskMate{% endblock %}
+
+{% block extra_css %}
+<style>
+    .activity-card {
+        border-left: 4px solid #0d6efd;
+        transition: all 0.3s ease;
+    }
+    .activity-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+    }
+    .activity-card.overdue {
+        border-left-color: #dc3545;
+    }
+    .activity-card.warning {
+        border-left-color: #ffc107;
+    }
+    .activity-card.complete {
+        border-left-color: #28a745;
+        opacity: 0.8;
+    }
+    .badge-role {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    .filter-tabs .nav-link {
+        color: #6c757d;
+        border: none;
+        border-bottom: 2px solid transparent;
+    }
+    .filter-tabs .nav-link.active {
+        color: #0d6efd;
+        border-bottom-color: #0d6efd;
+        font-weight: 600;
+    }
+    .stats-card {
+        border-radius: 10px;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .stats-card.risks {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    .stats-card.controls {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    .stats-card.mitigations {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    }
+    .activity-icon {
+        font-size: 1.2rem;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: #f8f9fa;
+    }
+    .priority-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
+    }
+    .user-filter-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #dee2e6;
+    }
+    .filter-select {
+        font-size: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-user-check me-2"></i>
+                        {% if is_supervisor %}Team Activities{% else %}My Activities{% endif %}
+                    </h2>
+                    <p class="text-muted">
+                        {% if view_all_users %}
+                            Viewing activities for: <strong>All Users</strong> - Showing all activities across the organization
+                        {% elif is_supervisor and risk_owner %}
+                            Viewing activities for: <strong>{{ risk_owner.name }}</strong> ({{ risk_owner.department.abbreviation }})
+                        {% elif is_supervisor and not current_risk_owner %}
+                            <span class="text-warning"><i class="fas fa-exclamation-triangle me-2"></i>Your account ({{ request.user.email }}) is not linked to a Risk Owner profile. Select a team member below to view their activities.</span>
+                        {% elif is_supervisor %}
+                            Select a team member to view their activities
+                        {% else %}
+                            Track all your assigned responsibilities
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="text-end">
+                    <small class="text-muted">Last updated: {{ now|date:"d M Y, H:i" }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supervisor Filter Panel -->
+    {% if is_supervisor %}
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="user-filter-card">
+                <label for="userFilterSelect" class="form-label">
+                    <i class="fas fa-filter me-2"></i><strong>Filter by User</strong>
+                </label>
+                <select id="userFilterSelect" class="form-select filter-select">
+                    <option value="">-- View My Activities --</option>
+                    <option value="all" {% if selected_user_id == 'all' %}selected{% endif %}>✓ All Users - View Everyone's Activities</option>
+                    <option disabled>──────────</option>
+                    {% for owner in all_risk_owners %}
+                    <option value="{{ owner.id }}" {% if owner.id == selected_user_id %}selected{% endif %}>
+                        {{ owner.name }} - {{ owner.department.abbreviation }} ({{ owner.email|default:"No email" }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <small class="text-muted mt-2 d-block">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Select a team member to view their assigned activities
+                </small>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="user-filter-card">
+                <label for="activitySearch" class="form-label"><i class="fas fa-search me-2"></i><strong>Search / Filter</strong></label>
+                <div class="input-group">
+                    <input id="activitySearch" type="search" class="form-control" placeholder="Search owners by name, email or department" value="{{ request.GET.q|default:'' }}">
+                    <button id="activitySearchBtn" class="btn btn-outline-secondary" type="button"><i class="fas fa-search"></i></button>
+                </div>
+                <div class="mt-2 d-flex gap-2">
+                    <select id="roleFilter" class="form-select form-select-sm w-auto">
+                        <option value="">All Roles</option>
+                        <option value="risk_owner" {% if request.GET.role == 'risk_owner' %}selected{% endif %}>Risk Owner</option>
+                        <option value="control_owner" {% if request.GET.role == 'control_owner' %}selected{% endif %}>Control Owner</option>
+                        <option value="responsible" {% if request.GET.role == 'responsible' %}selected{% endif %}>Responsible Person</option>
+                    </select>
+                    <select id="typeFilter" class="form-select form-select-sm w-auto">
+                        <option value="">All Types</option>
+                        <option value="risk" {% if request.GET.type == 'risk' %}selected{% endif %}>Risks</option>
+                        <option value="control" {% if request.GET.type == 'control' %}selected{% endif %}>Controls</option>
+                        <option value="mitigation" {% if request.GET.type == 'mitigation' %}selected{% endif %}>Mitigations</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Summary Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="stats-card risks">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0">Risks Owned</h6>
+                        <h2 class="mb-0 mt-2">{{ owned_risks_count }}</h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stats-card controls">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0">Controls Owned</h6>
+                        <h2 class="mb-0 mt-2">{{ owned_controls_count }}</h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-shield-alt fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stats-card mitigations">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0">Mitigations Assigned</h6>
+                        <h2 class="mb-0 mt-2">{{ assigned_mitigations_count }}</h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-tasks fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stats-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0">Overdue Items</h6>
+                        <h2 class="mb-0 mt-2">{{ overdue_count }}</h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-exclamation-circle fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <ul class="nav nav-tabs filter-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#all-activities">
+                <i class="fas fa-list me-2"></i>All Activities ({{ total_activities }})
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#owned-risks">
+                <i class="fas fa-exclamation-triangle me-2"></i>Owned Risks ({{ owned_risks_count }})
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#owned-controls">
+                <i class="fas fa-shield-alt me-2"></i>Owned Controls ({{ owned_controls_count }})
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#assigned-mitigations">
+                <i class="fas fa-tasks me-2"></i>Assigned Mitigations ({{ assigned_mitigations_count }})
+            </a>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+        <!-- All Activities Tab -->
+        <div class="tab-pane fade show active" id="all-activities">
+            {% if total_activities > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="8%">Type</th>
+                                <th width="15%">ID/Reference</th>
+                                <th width="25%">Title/Description</th>
+                                <th width="12%">Department</th>
+                                <th width="12%">Score/Status</th>
+                                <th width="15%">Progress/Due Date</th>
+                                <th width="8%">Role</th>
+                                <th width="5%">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Owned Risks -->
+                            {% for risk in owned_risks %}
+                            <tr class="{% if risk.risk_score >= 15 %}table-danger{% elif risk.risk_score >= 9 %}table-warning{% endif %}">
+                                <td>
+                                    <i class="fas fa-exclamation-triangle text-danger me-1"></i>
+                                    <span class="small fw-bold">Risk</span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'risk_detail' risk.risk_id %}" class="text-decoration-none">
+                                        {{ risk.risk_id }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <strong>{{ risk.title }}</strong>
+                                    <br><small class="text-muted">{{ risk.description|truncatewords:15 }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ risk.department.abbreviation }}</span>
+                                    <br><small class="text-muted">{{ risk.category.name|truncatewords:3 }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if risk.risk_score >= 15 %}danger{% elif risk.risk_score >= 9 %}warning{% else %}success{% endif %} fs-6">
+                                        Score: {{ risk.risk_score }}
+                                    </span>
+                                    <br><small class="text-muted">{{ risk.get_status_display }}</small>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        L: {{ risk.likelihood }} × I: {{ risk.impact }}
+                                    </small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-danger">Owner</span>
+                                    {% if view_all_users %}
+                                    <br><small class="text-muted">{{ risk.risk_owner.name }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'risk_detail' risk.risk_id %}" class="btn btn-sm btn-outline-primary" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+
+                            <!-- Owned Controls -->
+                            {% for control in owned_controls %}
+                            <tr class="{% if control.effectiveness < 50 %}table-danger{% elif control.effectiveness < 70 %}table-warning{% endif %}">
+                                <td>
+                                    <i class="fas fa-shield-alt text-primary me-1"></i>
+                                    <span class="small fw-bold">Control</span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'risk_detail' control.risk.risk_id %}" class="text-decoration-none">
+                                        {{ control.risk.risk_id }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <strong>{{ control.name }}</strong>
+                                    <br><small class="text-muted">{{ control.description|truncatewords:15 }}</small>
+                                </td>
+                                <td>
+                                    {{ control.control_type|title }}
+                                    {% if control.frequency %}
+                                    <br><small class="text-muted">{{ control.frequency }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2">{{ control.effectiveness }}%</span>
+                                        <div class="progress" style="width: 60px; height: 8px;">
+                                            <div class="progress-bar {% if control.effectiveness >= 70 %}bg-success{% elif control.effectiveness >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                 style="width: {{ control.effectiveness }}%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        Last tested:<br>{{ control.last_tested_date|date:"d M Y"|default:"Not tested" }}
+                                    </small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">Owner</span>
+                                    {% if view_all_users %}
+                                    <br><small class="text-muted">{{ control.control_owner.name }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'risk_detail' control.risk.risk_id %}" class="btn btn-sm btn-outline-primary" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+
+                            <!-- Assigned Mitigations -->
+                            {% for mitigation in assigned_mitigations %}
+                            <tr class="{% if mitigation.is_overdue %}table-danger{% elif mitigation.status == 'complete' %}table-success{% elif mitigation.due_date and mitigation.days_until_due <= 7 %}table-warning{% endif %}">
+                                <td>
+                                    <i class="fas fa-tasks text-success me-1"></i>
+                                    <span class="small fw-bold">Mitigation</span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'risk_detail' mitigation.risk.risk_id %}" class="text-decoration-none">
+                                        {{ mitigation.risk.risk_id }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <strong>{{ mitigation.get_strategy_display }} Strategy</strong>
+                                    <br><small class="text-muted">{{ mitigation.action|truncatewords:15 }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ mitigation.risk.department.abbreviation }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if mitigation.status == 'complete' %}success{% elif mitigation.status == 'in_progress' %}primary{% elif mitigation.status == 'postponed' %}warning{% elif mitigation.status == 'not_achieved' %}danger{% else %}secondary{% endif %}">
+                                        {{ mitigation.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="mb-1">
+                                        <small>Progress: <strong>{{ mitigation.completion_percentage }}%</strong></small>
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar {% if mitigation.completion_percentage >= 70 %}bg-success{% elif mitigation.completion_percentage >= 40 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                 style="width: {{ mitigation.completion_percentage }}%"></div>
+                                        </div>
+                                    </div>
+                                    {% if mitigation.due_date %}
+                                    <small class="{% if mitigation.is_overdue %}text-danger fw-bold{% elif mitigation.days_until_due <= 7 %}text-warning{% else %}text-muted{% endif %}">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        {% if mitigation.is_overdue %}
+                                            Overdue by {{ mitigation.days_overdue }}d
+                                        {% else %}
+                                            Due: {{ mitigation.due_date|date:"d M Y" }}
+                                        {% endif %}
+                                    </small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">Responsible</span>
+                                    {% if view_all_users %}
+                                    <br><small class="text-muted">{{ mitigation.responsible_person.name }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'update_mitigation' mitigation.id %}" class="btn btn-sm btn-outline-success" title="Update">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    {% if not risk_owner and is_supervisor %}
+                        No Risk Owner profile is associated with your account. Please select a team member from the dropdown above to view their activities, or contact your administrator to link your account to a Risk Owner profile.
+                    {% elif risk_owner %}
+                        {{ risk_owner.name }} has no assigned activities at this time.
+                    {% else %}
+                        You have no assigned activities at this time.
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Owned Risks Tab -->
+        <div class="tab-pane fade" id="owned-risks">
+            {% if owned_risks %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Risk ID</th>
+                                <th>Title</th>
+                                <th>Department</th>
+                                <th>Category</th>
+                                <th>Risk Score</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for risk in owned_risks %}
+                            <tr>
+                                <td><a href="{% url 'risk_detail' risk.risk_id %}">{{ risk.risk_id }}</a></td>
+                                <td>{{ risk.title }}</td>
+                                <td>{{ risk.department }}</td>
+                                <td>{{ risk.category }}</td>
+                                <td>
+                                    <span class="badge bg-{% if risk.risk_score >= 15 %}danger{% elif risk.risk_score >= 9 %}warning{% else %}success{% endif %}">
+                                        {{ risk.risk_score }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if risk.is_approved %}success{% elif risk.status == 'rejected' %}danger{% else %}warning{% endif %}">
+                                        {{ risk.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'risk_detail' risk.risk_id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>You are not the owner of any risks.
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Owned Controls Tab -->
+        <div class="tab-pane fade" id="owned-controls">
+            {% if owned_controls %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Control Name</th>
+                                <th>Risk</th>
+                                <th>Type</th>
+                                <th>Effectiveness</th>
+                                <th>Frequency</th>
+                                <th>Last Tested</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for control in owned_controls %}
+                            <tr>
+                                <td>{{ control.name }}</td>
+                                <td><a href="{% url 'risk_detail' control.risk.risk_id %}">{{ control.risk.risk_id }}</a></td>
+                                <td>{{ control.control_type|title }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2">{{ control.effectiveness }}%</span>
+                                        <div class="progress" style="width: 60px; height: 8px;">
+                                            <div class="progress-bar {% if control.effectiveness >= 70 %}bg-success{% elif control.effectiveness >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                 style="width: {{ control.effectiveness }}%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ control.frequency|default:"Not specified" }}</td>
+                                <td>{{ control.last_tested_date|date:"d M Y"|default:"Not tested" }}</td>
+                                <td>
+                                    <a href="{% url 'risk_detail' control.risk.risk_id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> View Risk
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>You are not the owner of any controls.
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Assigned Mitigations Tab -->
+        <div class="tab-pane fade" id="assigned-mitigations">
+            {% if assigned_mitigations %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Risk</th>
+                                <th>Strategy</th>
+                                <th>Action</th>
+                                <th>Due Date</th>
+                                <th>Progress</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mitigation in assigned_mitigations %}
+                            <tr class="{% if mitigation.is_overdue %}table-danger{% endif %}">
+                                <td><a href="{% url 'risk_detail' mitigation.risk.risk_id %}">{{ mitigation.risk.risk_id }}</a></td>
+                                <td>{{ mitigation.get_strategy_display }}</td>
+                                <td>{{ mitigation.action|truncatewords:10 }}</td>
+                                <td>
+                                    {% if mitigation.due_date %}
+                                        <span class="{% if mitigation.is_overdue %}text-danger fw-bold{% endif %}">
+                                            {{ mitigation.due_date|date:"d M Y" }}
+                                            {% if mitigation.is_overdue %}
+                                                <br><small>({{ mitigation.days_overdue }} days overdue)</small>
+                                            {% endif %}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">Not set</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2">{{ mitigation.completion_percentage }}%</span>
+                                        <div class="progress" style="width: 60px; height: 8px;">
+                                            <div class="progress-bar {% if mitigation.completion_percentage >= 70 %}bg-success{% elif mitigation.completion_percentage >= 40 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                 style="width: {{ mitigation.completion_percentage }}%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if mitigation.status == 'complete' %}success{% elif mitigation.status == 'in_progress' %}primary{% elif mitigation.status == 'postponed' %}warning{% elif mitigation.status == 'not_achieved' %}danger{% else %}secondary{% endif %}">
+                                        {{ mitigation.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'update_mitigation' mitigation.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i> Update
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>You have no assigned mitigation actions.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refresh page every 5 minutes to keep data current
+    setTimeout(function() {
+        location.reload();
+    }, 300000);
+
+    {% if is_supervisor %}
+    // User dropdown filter functionality
+    const userFilterSelect = document.getElementById('userFilterSelect');
+    const activitySearch = document.getElementById('activitySearch');
+    const activitySearchBtn = document.getElementById('activitySearchBtn');
+    const roleFilter = document.getElementById('roleFilter');
+    const typeFilter = document.getElementById('typeFilter');
+    
+    if (userFilterSelect) {
+        function updateFiltersAndNavigate(params) {
+            const currentUrl = new URL(window.location.href);
+            Object.keys(params).forEach(k => {
+                if (params[k] === null || params[k] === '') {
+                    currentUrl.searchParams.delete(k);
+                } else {
+                    currentUrl.searchParams.set(k, params[k]);
+                }
+            });
+            window.location.href = currentUrl.toString();
+        }
+
+        userFilterSelect.addEventListener('change', function() {
+            updateFiltersAndNavigate({ user_id: this.value, q: activitySearch ? activitySearch.value : '', role: roleFilter ? roleFilter.value : '', type: typeFilter ? typeFilter.value : '' });
+        });
+        
+        console.log('Current selected user ID:', userFilterSelect.value);
+        console.log('URL parameter user_id:', new URLSearchParams(window.location.search).get('user_id'));
+
+        if (activitySearchBtn) {
+            activitySearchBtn.addEventListener('click', function() {
+                updateFiltersAndNavigate({ user_id: userFilterSelect.value, q: activitySearch.value, role: roleFilter.value, type: typeFilter.value });
+            });
+            activitySearch.addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') activitySearchBtn.click();
+            });
+        }
+
+        if (roleFilter) {
+            roleFilter.addEventListener('change', function() {
+                updateFiltersAndNavigate({ user_id: userFilterSelect.value, q: activitySearch ? activitySearch.value : '', role: this.value, type: typeFilter ? typeFilter.value : '' });
+            });
+        }
+
+        if (typeFilter) {
+            typeFilter.addEventListener('change', function() {
+                updateFiltersAndNavigate({ user_id: userFilterSelect.value, q: activitySearch ? activitySearch.value : '', role: roleFilter ? roleFilter.value : '', type: this.value });
+            });
+        }
+    }
+    {% endif %}
+</script>
+{% endblock %}

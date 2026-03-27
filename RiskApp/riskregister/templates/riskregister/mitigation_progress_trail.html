@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mitigation Progress Trail - RiskSuite{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'risk_detail' risk_id=risk.risk_id %}">Risk {{ risk.risk_id }}</a></li>
+                    <li class="breadcrumb-item active">Mitigation Progress Trail</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Mitigation Summary Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h4 class="card-title mb-2">{{ mitigation.action }}</h4>
+                            <p class="text-muted mb-2">
+                                <strong>Risk:</strong> {{ risk.risk_id }} - {{ risk.title }}
+                            </p>
+                            <p class="text-muted mb-0">
+                                <strong>Strategy:</strong> 
+                                <span class="badge bg-secondary">{{ mitigation.get_strategy_display }}</span>
+                            </p>
+                        </div>
+                        <div class="text-end">
+                            <a href="{% url 'update_mitigation' mitigation.pk %}" class="btn btn-primary mb-2">
+                                <i class="fas fa-edit me-1"></i> Update Status
+                            </a>
+                            <br>
+                            <a href="{% url 'risk_detail' risk_id=risk.risk_id %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-arrow-left me-1"></i> Back to Risk
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary bg-opacity-10 rounded p-3">
+                                <i class="fas fa-tasks fa-2x text-primary"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Current Status</h6>
+                            <h4 class="mb-0">
+                                <span class="badge bg-{% if mitigation.status == 'complete' %}success{% elif mitigation.status == 'in_progress' or mitigation.status == 'partially_implemented' %}warning{% elif mitigation.status == 'postponed' %}info{% elif mitigation.status == 'not_achieved' or mitigation.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
+                                    {{ mitigation.get_status_display }}
+                                </span>
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-success bg-opacity-10 rounded p-3">
+                                <i class="fas fa-percentage fa-2x text-success"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Completion</h6>
+                            <h4 class="mb-0">{{ mitigation.completion_percentage }}%</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-warning bg-opacity-10 rounded p-3">
+                                <i class="fas fa-clock fa-2x text-warning"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Postponements</h6>
+                            <h4 class="mb-0">{{ postponements }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-info bg-opacity-10 rounded p-3">
+                                <i class="fas fa-history fa-2x text-info"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total Updates</h6>
+                            <h4 class="mb-0">{{ total_updates }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Timeline -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-timeline me-2"></i>
+                        Progress Timeline
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if progress_logs %}
+                    <div class="timeline">
+                        {% for log in progress_logs %}
+                        <div class="timeline-item mb-4">
+                            <div class="row">
+                                <div class="col-md-2 text-md-end">
+                                    <div class="timeline-date">
+                                        <strong>{{ log.created_at|date:"M d, Y" }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ log.created_at|time:"H:i" }}</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-1 text-center">
+                                    <div class="timeline-marker">
+                                        <div class="bg-{% if log.action_type == 'postponed' %}info{% elif log.action_type == 'completion_failed' %}danger{% elif log.action_type == 'partial_completion' %}warning{% elif log.action_type == 'status_change' and log.status_at_time == 'complete' %}success{% else %}primary{% endif %} rounded-circle d-inline-block" style="width: 12px; height: 12px;"></div>
+                                        {% if not forloop.last %}
+                                        <div class="timeline-line bg-secondary" style="width: 2px; height: 100%; margin-left: 5px;"></div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-9">
+                                    <div class="card border-start border-3 border-{% if log.action_type == 'postponed' %}info{% elif log.action_type == 'completion_failed' %}danger{% elif log.action_type == 'partial_completion' %}warning{% elif log.action_type == 'status_change' and log.status_at_time == 'complete' %}success{% else %}primary{% endif %}">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="mb-0">
+                                                    <span class="badge bg-{% if log.action_type == 'postponed' %}info{% elif log.action_type == 'completion_failed' %}danger{% elif log.action_type == 'partial_completion' %}warning{% else %}primary{% endif %}">
+                                                        {{ log.get_action_type_display }}
+                                                    </span>
+                                                </h6>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-user me-1"></i>
+                                                    {{ log.user.get_full_name|default:log.user.username|default:"System" }}
+                                                </small>
+                                            </div>
+                                            
+                                            {% if log.previous_status and log.status_at_time %}
+                                            <div class="mb-2">
+                                                <strong>Status Change:</strong>
+                                                <span class="badge bg-secondary">{{ log.previous_status }}</span>
+                                                <i class="fas fa-arrow-right mx-2"></i>
+                                                <span class="badge bg-{% if log.status_at_time == 'complete' %}success{% elif log.status_at_time == 'in_progress' or log.status_at_time == 'partially_implemented' %}warning{% elif log.status_at_time == 'postponed' %}info{% elif log.status_at_time == 'not_achieved' %}danger{% else %}secondary{% endif %}">
+                                                    {{ log.status_at_time }}
+                                                </span>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            {% if log.completion_change != 0 %}
+                                            <div class="mb-2">
+                                                <strong>Completion Progress:</strong>
+                                                {{ log.previous_completion_percentage }}%
+                                                <i class="fas fa-arrow-right mx-2"></i>
+                                                {{ log.completion_percentage }}%
+                                                <span class="text-{% if log.completion_change > 0 %}success{% else %}danger{% endif %} ms-2">
+                                                    ({% if log.completion_change > 0 %}+{% endif %}{{ log.completion_change }}%)
+                                                </span>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            {% if log.notes %}
+                                            <div class="mb-2">
+                                                <strong>Notes:</strong>
+                                                <p class="mb-0 text-muted">{{ log.notes }}</p>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            {% if log.postponement_reason %}
+                                            <div class="alert alert-info mb-2">
+                                                <strong><i class="fas fa-clock me-1"></i> Postponement Reason:</strong>
+                                                <p class="mb-0">{{ log.postponement_reason }}</p>
+                                                {% if log.days_postponed > 0 %}
+                                                <small class="text-muted">Postponed by {{ log.days_postponed }} day{{ log.days_postponed|pluralize }}</small>
+                                                {% endif %}
+                                            </div>
+                                            {% endif %}
+                                            
+                                            {% if log.failure_reason %}
+                                            <div class="alert alert-danger mb-2">
+                                                <strong><i class="fas fa-exclamation-triangle me-1"></i> Reason for Not Achieving:</strong>
+                                                <p class="mb-0">{{ log.failure_reason }}</p>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            {% if log.lessons_learned %}
+                                            <div class="alert alert-warning mb-2">
+                                                <strong><i class="fas fa-lightbulb me-1"></i> Lessons Learned:</strong>
+                                                <p class="mb-0">{{ log.lessons_learned }}</p>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            {% if log.evidence %}
+                                            <div class="mt-2">
+                                                <i class="fas fa-paperclip me-1"></i>
+                                                <a href="{{ log.evidence.url }}" target="_blank" class="text-decoration-none">
+                                                    View Attached Evidence
+                                                </a>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No progress updates have been recorded for this mitigation yet.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline-item {
+    position: relative;
+}
+.timeline-marker {
+    position: relative;
+}
+.timeline-line {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.timeline-date {
+    padding-top: 8px;
+}
+</style>
+{% endblock %}

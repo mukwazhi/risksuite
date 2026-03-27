@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Assessment Decision Removed - RiskMate{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="alert alert-info">
+    <h5 class="mb-1">Assessment Decision feature removed</h5>
+    <p class="mb-0">The Assessment Decision workflow has been removed from the application. Indicator assessments now flow to the manual risk assessment workflow. Any stored decision records should be purged from the database using the administrative script provided in <strong>scripts/delete_assessment_decisions.sql</strong>.</p>
+  </div>
+  <a href="{% url 'indicator_assessment_history' indicator.pk %}" class="btn btn-outline-primary">Back to Indicator History</a>
+</div>
+{% endblock %}
+// Function to preview re-evaluation form
+function previewReevaluation() {
+  // Get the decision ID from the URL or use a modal
+  const assessmentId = {{ assessment.id }};
+  
+  // Show confirmation modal
+  const confirmed = confirm(
+    'This will save your decision to re-evaluate the risk and take you to the risk re-assessment form.\n\n' +
+    'Current Risk:\n' +
+    '• Likelihood: {{ risk.likelihood }}\n' +
+    '• Impact: {{ risk.impact }}\n' +
+    '• Score: {{ risk.risk_score }} ({{ risk.risk_rating }})\n\n' +
+    'Do you want to proceed with re-evaluation?'
+  );
+  
+  if (confirmed) {
+    // Select the re-evaluate option and submit the form
+    const reevaluateRadio = document.querySelector('input[name="decision"][value="re_evaluate"]');
+    if (reevaluateRadio) {
+      reevaluateRadio.checked = true;
+      
+      // Add a hidden field to indicate quick submission
+      const form = document.querySelector('form');
+      const quickSubmit = document.createElement('input');
+      quickSubmit.type = 'hidden';
+      quickSubmit.name = 'quick_submit';
+      quickSubmit.value = 'true';
+      form.appendChild(quickSubmit);
+      
+      // Submit the form
+      form.submit();
+    }
+  }
+}
+
+// Quick Yes - Assess Risk Now
+function quickYesAssess() {
+  const reevaluateRadio = document.querySelector('input[name="decision"][value="re_evaluate"]');
+  if (reevaluateRadio) {
+    reevaluateRadio.checked = true;
+    reevaluateRadio.dispatchEvent(new Event('change'));
+    
+    // Auto-fill justification
+    const justificationField = document.querySelector('textarea[name="justification"]');
+    if (justificationField && !justificationField.value.trim()) {
+      justificationField.value = 'Based on the indicator assessment results, proceeding with risk re-evaluation to update the risk rating accordingly.';
+    }
+    
+    // Submit the form
+    document.querySelector('form').submit();
+  }
+}
+
+// Select Maintain option
+function selectMaintain() {
+  const maintainRadio = document.querySelector('input[name="decision"][value="maintain"]');
+  if (maintainRadio) {
+    maintainRadio.checked = true;
+    maintainRadio.dispatchEvent(new Event('change'));
+    
+    // Scroll to justification field
+    const justificationField = document.querySelector('textarea[name="justification"]');
+    if (justificationField) {
+      justificationField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => justificationField.focus(), 500);
+    }
+  }
+}
+</script>
+{% endblock %}

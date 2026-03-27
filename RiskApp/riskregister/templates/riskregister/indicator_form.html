@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Add Indicator - RiskMate{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <!-- Workflow Progress Indicator -->
+  {% if is_workflow %}
+  <div class="alert alert-info mb-3">
+    <h6 class="alert-heading mb-2"><i class="fas fa-route me-2"></i>New Risk Creation Workflow</h6>
+    <div class="d-flex align-items-center">
+      <span class="badge bg-success me-2"><i class="fas fa-check"></i> 1. Risk Created</span>
+      <i class="fas fa-arrow-right mx-2"></i>
+      <span class="badge bg-primary me-2"><i class="fas fa-spinner fa-pulse"></i> 2. Adding Indicators ({{ existing_indicators_count }} added)</span>
+      <i class="fas fa-arrow-right mx-2"></i>
+      <span class="badge bg-secondary me-2">3. Assess Indicators</span>
+      <i class="fas fa-arrow-right mx-2"></i>
+      <span class="badge bg-secondary">4. Risk Assessment</span>
+    </div>
+  </div>
+  {% endif %}
+  
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">
+        <i class="fas fa-tachometer-alt me-2"></i>Add Indicator for: {{ risk.title }}
+        {% if is_workflow %}
+          <span class="badge bg-info ms-2">Step 2 of 4</span>
+        {% endif %}
+      </h5>
+      <a href="{% url 'risk_detail' risk_id=risk.risk_id %}" class="btn btn-sm btn-outline-secondary">Back</a>
+    </div>
+    <div class="card-body">
+      {% if existing_indicators_count > 0 %}
+      <div class="alert alert-success mb-3">
+        <i class="fas fa-check-circle me-2"></i>
+        <strong>{{ existing_indicators_count }} indicator{{ existing_indicators_count|pluralize }}</strong> already added to this risk.
+      </div>
+      {% endif %}
+      
+      <form method="post">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="row g-2">
+          <!-- Start with name / KPI first -->
+          <div class="col-12">
+            <div class="mb-2">
+              <label class="form-label small mb-1">{{ form.preferred_kpi_name.label }}</label>
+              {{ form.preferred_kpi_name }}
+              {% if form.preferred_kpi_name.help_text %}<div class="form-text small">{{ form.preferred_kpi_name.help_text }}</div>{% endif %}
+              {% for error in form.preferred_kpi_name.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            </div>
+          </div>
+
+          <!-- Allow selection of existing KPI (optional) -->
+          <div class="col-md-6">
+            <label class="form-label small mb-1">{{ form.preferred_kpi.label }}</label>
+            {{ form.preferred_kpi }}
+            {% for error in form.preferred_kpi.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+          </div>
+
+          <!-- Unit / Direction -->
+          <div class="col-md-3">
+            <label class="form-label small mb-1">{{ form.unit.label }}</label>
+            {{ form.unit }}
+            {% for error in form.unit.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small mb-1">{{ form.direction.label }}</label>
+            {{ form.direction }}
+            {% for error in form.direction.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+          </div>
+
+          <!-- Measurement period / aggregation / data source -->
+          <div class="col-md-4">
+            <label class="form-label small mb-1">{{ form.measurement_period.label }}</label>
+            {{ form.measurement_period }}
+            {% for error in form.measurement_period.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small mb-1">{{ form.aggregation_method.label }}</label>
+            {{ form.aggregation_method }}
+            {% for error in form.aggregation_method.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small mb-1">{{ form.data_source.label }}</label>
+            {{ form.data_source }}
+            {% for error in form.data_source.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+          </div>
+
+          <!-- Thresholds: Trigger and Breach (operators and values) -->
+          <div class="col-md-6">
+            <label class="form-label small mb-1">{{ form.trigger_threshold.label }}</label>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text p-1">{{ form.trigger_operator }}</span>
+              {{ form.trigger_threshold }}
+            </div>
+            {% if form.trigger_threshold.help_text %}<div class="form-text small">{{ form.trigger_threshold.help_text }}</div>{% endif %}
+            {% for error in form.trigger_threshold.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small mb-1">{{ form.breach_threshold.label }}</label>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text p-1">{{ form.breach_operator }}</span>
+              {{ form.breach_threshold }}
+            </div>
+            {% if form.breach_threshold.help_text %}<div class="form-text small">{{ form.breach_threshold.help_text }}</div>{% endif %}
+            {% for error in form.breach_threshold.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+          </div>
+
+          <!-- Appetite and tolerance -->
+          <div class="col-md-6">
+            <label class="form-label small mb-1">{{ form.appetite_level.label }}</label>
+            {{ form.appetite_level }}
+            {% for error in form.appetite_level.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small mb-1">{{ form.appetite_tolerance_pct.label }}</label>
+            {{ form.appetite_tolerance_pct }}
+            {% for error in form.appetite_tolerance_pct.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+          </div>
+
+          <!-- Notes and active -->
+          <div class="col-12">
+            <label class="form-label small mb-1">{{ form.notes.label }}</label>
+            {{ form.notes }}
+          </div>
+          <div class="col-12">
+            <div class="form-check mt-2">
+              {{ form.active }} <label class="form-check-label small ms-2" for="id_active">{{ form.active.label }}</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 border-top pt-3">
+          {% if is_workflow %}
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <button type="submit" name="action" value="save_and_add_more" class="btn btn-primary">
+                  <i class="fas fa-plus me-1"></i>Save & Add Another Indicator
+                </button>
+                <button type="submit" name="proceed_to_assessment" value="1" class="btn btn-success">
+                  <i class="fas fa-arrow-right me-1"></i>Save & Proceed to Assessment
+                </button>
+              </div>
+              <a href="{% url 'risk_detail' risk_id=risk.risk_id %}" class="btn btn-link">Cancel</a>
+            </div>
+            <small class="text-muted d-block mt-2">
+              <i class="fas fa-info-circle me-1"></i>
+              Add at least one indicator, then proceed to assess them.
+            </small>
+          {% else %}
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save me-1"></i>Save Indicator
+            </button>
+            <button type="submit" name="action" value="save_and_add_more" class="btn btn-outline-primary">
+              <i class="fas fa-plus me-1"></i>Save & Add Another
+            </button>
+            <a href="{% url 'risk_detail' risk_id=risk.risk_id %}" class="btn btn-link">Cancel</a>
+          {% endif %}
+        </div>
+      </form>
+
+      {% if existing_indicator_forms %}
+      <hr class="my-4" />
+      <h6 class="mb-3">Existing Indicators</h6>
+      <div class="row">
+        {% for ind_form in existing_indicator_forms %}
+        <div class="col-12">
+          <form method="post" class="card mb-3">
+            {% csrf_token %}
+            <input type="hidden" name="existing_indicator_pk" value="{{ ind_form.instance.pk }}" />
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <div>
+                <strong>
+                  {% if ind_form.instance.preferred_kpi_name %}
+                    {{ ind_form.instance.preferred_kpi_name }}
+                  {% elif ind_form.instance.preferred_kpi %}
+                    {{ ind_form.instance.preferred_kpi.name }}
+                  {% else %}
+                    Indicator #{{ ind_form.instance.pk }}
+                  {% endif %}
+                </strong>
+                <div class="text-muted small">ID: {{ ind_form.instance.pk }}</div>
+              </div>
+              <div class="d-flex align-items-center">
+                <small class="text-muted me-3">Created: {{ ind_form.instance.created_at|date:'Y-m-d' }}</small>
+                <button type="submit" class="btn btn-sm btn-primary">Save changes</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="row g-2">
+                {% if 'preferred_kpi_name' in ind_form.fields %}
+                <div class="col-md-4 mb-2">
+                  <label class="form-label small mb-1">{{ ind_form.preferred_kpi_name.label }}</label>
+                  {{ ind_form.preferred_kpi_name }}
+                  {% if ind_form.preferred_kpi_name.help_text %}<div class="form-text small">{{ ind_form.preferred_kpi_name.help_text }}</div>{% endif %}
+                  {% for error in ind_form.preferred_kpi_name.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                {% endif %}
+
+                {% if 'preferred_kpi' in ind_form.fields %}
+                <div class="col-md-4 mb-2">
+                  <label class="form-label small mb-1">{{ ind_form.preferred_kpi.label }}</label>
+                  {{ ind_form.preferred_kpi }}
+                  {% for error in ind_form.preferred_kpi.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                {% endif %}
+
+                {% if 'unit' in ind_form.fields %}
+                <div class="col-md-4 mb-2">
+                  <label class="form-label small mb-1">{{ ind_form.unit.label }}</label>
+                  {{ ind_form.unit }}
+                  {% for error in ind_form.unit.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                {% endif %}
+
+                {% if 'direction' in ind_form.fields %}
+                <div class="col-md-4 mb-2">
+                  <label class="form-label small mb-1">{{ ind_form.direction.label }}</label>
+                  {{ ind_form.direction }}
+                  {% for error in ind_form.direction.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                {% endif %}
+
+                {% if 'measurement_period' in ind_form.fields %}
+                <div class="col-md-4 mb-2">
+                  <label class="form-label small mb-1">{{ ind_form.measurement_period.label }}</label>
+                  {{ ind_form.measurement_period }}
+                  {% for error in ind_form.measurement_period.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                {% endif %}
+
+                {% if 'aggregation_method' in ind_form.fields %}
+                <div class="col-md-4 mb-2">
+                  <label class="form-label small mb-1">{{ ind_form.aggregation_method.label }}</label>
+                  {{ ind_form.aggregation_method }}
+                  {% for error in ind_form.aggregation_method.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                {% endif %}
+
+                {% if 'data_source' in ind_form.fields %}
+                <div class="col-md-4 mb-2">
+                  <label class="form-label small mb-1">{{ ind_form.data_source.label }}</label>
+                  {{ ind_form.data_source }}
+                  {% for error in ind_form.data_source.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                {% endif %}
+
+                {% if 'trigger_operator' in ind_form.fields and 'trigger_threshold' in ind_form.fields %}
+                <div class="col-md-4 mb-2">
+                  <label class="form-label small mb-1">{{ ind_form.trigger_threshold.label }}</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text p-1">{{ ind_form.trigger_operator }}</span>
+                    {{ ind_form.trigger_threshold }}
+                  </div>
+                  {% if ind_form.trigger_threshold.help_text %}<div class="form-text small">{{ ind_form.trigger_threshold.help_text }}</div>{% endif %}
+                  {% for error in ind_form.trigger_threshold.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                {% elif 'trigger_threshold' in ind_form.fields %}
+                <div class="col-md-4 mb-2">
+                  <label class="form-label small mb-1">{{ ind_form.trigger_threshold.label }}</label>
+                  {{ ind_form.trigger_threshold }}
+                </div>
+                {% endif %}
+
+                {% if 'breach_operator' in ind_form.fields and 'breach_threshold' in ind_form.fields %}
+                <div class="col-md-4 mb-2">
+                  <label class="form-label small mb-1">{{ ind_form.breach_threshold.label }}</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text p-1">{{ ind_form.breach_operator }}</span>
+                    {{ ind_form.breach_threshold }}
+                  </div>
+                  {% if ind_form.breach_threshold.help_text %}<div class="form-text small">{{ ind_form.breach_threshold.help_text }}</div>{% endif %}
+                  {% for error in ind_form.breach_threshold.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                {% elif 'breach_threshold' in ind_form.fields %}
+                <div class="col-md-4 mb-2">
+                  <label class="form-label small mb-1">{{ ind_form.breach_threshold.label }}</label>
+                  {{ ind_form.breach_threshold }}
+                </div>
+                {% endif %}
+
+                {% if 'appetite_level' in ind_form.fields %}
+                <div class="col-md-4 mb-2">
+                  <label class="form-label small mb-1">{{ ind_form.appetite_level.label }}</label>
+                  {{ ind_form.appetite_level }}
+                  {% for error in ind_form.appetite_level.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                {% endif %}
+
+                {% if 'appetite_tolerance_pct' in ind_form.fields %}
+                <div class="col-md-4 mb-2">
+                  <label class="form-label small mb-1">{{ ind_form.appetite_tolerance_pct.label }}</label>
+                  {{ ind_form.appetite_tolerance_pct }}
+                  {% for error in ind_form.appetite_tolerance_pct.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                </div>
+                {% endif %}
+
+                {% if 'notes' in ind_form.fields %}
+                <div class="col-12 mb-2">
+                  <label class="form-label small mb-1">{{ ind_form.notes.label }}</label>
+                  {{ ind_form.notes }}
+                </div>
+                {% endif %}
+
+                {% if 'active' in ind_form.fields %}
+                <div class="col-12 mb-2">
+                  <div class="form-check">
+                    {{ ind_form.active }} <label class="form-check-label small ms-2" for="{{ ind_form.active.id_for_label }}">{{ ind_form.active.label }}</label>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,393 @@
+{% extends 'base.html' %}
+
+{% block title %}Update Mitigation Status{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .info-card {
+    background: #e7f3ff;
+    border-left: 4px solid #0d6efd;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+  }
+  
+  .status-badge {
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: 500;
+  }
+  
+  .status-pending {
+    background: #ffc107;
+    color: #000;
+  }
+  
+  .status-in_progress {
+    background: #0dcaf0;
+    color: #000;
+  }
+  
+  .status-complete {
+    background: #198754;
+    color: #fff;
+  }
+  
+  .alert-reassessment {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+  <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
+    <div>
+      <h3 class="mb-2"><i class="fas fa-tasks me-2 text-primary"></i>{{ form_title }}</h3>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'all_risks' %}">Risk Register</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'risk_detail' risk_id=risk.risk_id %}">{{ risk.risk_id }}</a></li>
+          <li class="breadcrumb-item active">Update Mitigation</li>
+        </ol>
+      </nav>
+    </div>
+    <div>
+      <a href="{% url 'risk_detail' risk_id=risk.risk_id %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Back to Risk
+      </a>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Update Mitigation Status</h5>
+        </div>
+        <div class="card-body">
+          <!-- Risk Info Card -->
+          <div class="info-card mb-4">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <h6 class="mb-2"><strong>Risk:</strong> {{ risk.risk_id }} - {{ risk.title }}</h6>
+                <p class="mb-1"><strong>Current Status:</strong> 
+                  <span class="status-badge status-{{ old_status }}">
+                    {{ mitigation.get_status_display }}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mitigation Details -->
+          <div class="mb-4 p-3 bg-light rounded">
+            <h6 class="mb-2"><strong>Mitigation Action:</strong></h6>
+            <p class="mb-2">{{ mitigation.action }}</p>
+            <div class="row mt-3">
+              <div class="col-md-6">
+                <small class="text-muted"><strong>Strategy:</strong> {{ mitigation.get_strategy_display }}</small>
+              </div>
+              <div class="col-md-6">
+                <small class="text-muted"><strong>Responsible:</strong> {{ mitigation.responsible_person|default:"Not assigned" }}</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Update Form -->
+          <form method="post" enctype="multipart/form-data" id="mitigationUpdateForm">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+              </div>
+            {% endif %}
+
+            <div class="mb-3">
+              <label for="{{ form.status.id_for_label }}" class="form-label">
+                {{ form.status.label }} <span class="text-danger">*</span>
+              </label>
+              {{ form.status }}
+              {% if form.status.help_text %}
+                <small class="form-text text-muted">{{ form.status.help_text }}</small>
+              {% endif %}
+              {% if form.status.errors %}
+                <div class="text-danger small">{{ form.status.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.completion_percentage.id_for_label }}" class="form-label">
+                {{ form.completion_percentage.label }}
+              </label>
+              <div class="input-group">
+                {{ form.completion_percentage }}
+                <span class="input-group-text">%</span>
+              </div>
+              {% if form.completion_percentage.help_text %}
+                <small class="form-text text-muted">{{ form.completion_percentage.help_text }}</small>
+              {% endif %}
+              {% if form.completion_percentage.errors %}
+                <div class="text-danger small">{{ form.completion_percentage.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.progress_notes.id_for_label }}" class="form-label">
+                {{ form.progress_notes.label }}
+              </label>
+              {{ form.progress_notes }}
+              {% if form.progress_notes.help_text %}
+                <small class="form-text text-muted">{{ form.progress_notes.help_text }}</small>
+              {% endif %}
+              {% if form.progress_notes.errors %}
+                <div class="text-danger small">{{ form.progress_notes.errors }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Conditional fields based on status -->
+            <div id="postponementFields" style="display: none;">
+              <div class="alert alert-info">
+                <h6><i class="fas fa-clock me-2"></i>Postponement Details</h6>
+                <div class="mb-3">
+                  <label for="{{ form.postponement_reason.id_for_label }}" class="form-label">
+                    {{ form.postponement_reason.label }} <span class="text-danger">*</span>
+                  </label>
+                  {{ form.postponement_reason }}
+                  {% if form.postponement_reason.help_text %}
+                    <small class="form-text text-muted">{{ form.postponement_reason.help_text }}</small>
+                  {% endif %}
+                  {% if form.postponement_reason.errors %}
+                    <div class="text-danger small">{{ form.postponement_reason.errors }}</div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <div id="failureFields" style="display: none;">
+              <div class="alert alert-danger">
+                <h6><i class="fas fa-exclamation-triangle me-2"></i>Not Achieved Details</h6>
+                <div class="mb-3">
+                  <label for="{{ form.failure_reason.id_for_label }}" class="form-label">
+                    {{ form.failure_reason.label }} <span class="text-danger">*</span>
+                  </label>
+                  {{ form.failure_reason }}
+                  {% if form.failure_reason.help_text %}
+                    <small class="form-text text-muted">{{ form.failure_reason.help_text }}</small>
+                  {% endif %}
+                  {% if form.failure_reason.errors %}
+                    <div class="text-danger small">{{ form.failure_reason.errors }}</div>
+                  {% endif %}
+                </div>
+                <div class="mb-0">
+                  <label for="{{ form.lessons_learned.id_for_label }}" class="form-label">
+                    {{ form.lessons_learned.label }}
+                  </label>
+                  {{ form.lessons_learned }}
+                  {% if form.lessons_learned.help_text %}
+                    <small class="form-text text-muted">{{ form.lessons_learned.help_text }}</small>
+                  {% endif %}
+                  {% if form.lessons_learned.errors %}
+                    <div class="text-danger small">{{ form.lessons_learned.errors }}</div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.responsible_person.id_for_label }}" class="form-label">
+                {{ form.responsible_person.label }}
+              </label>
+              {{ form.responsible_person }}
+              {% if form.responsible_person.help_text %}
+                <small class="form-text text-muted">{{ form.responsible_person.help_text }}</small>
+              {% endif %}
+              {% if form.responsible_person.errors %}
+                <div class="text-danger small">{{ form.responsible_person.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.due_date.id_for_label }}" class="form-label">
+                {{ form.due_date.label }}
+              </label>
+              {{ form.due_date }}
+              {% if mitigation.original_due_date and mitigation.original_due_date != mitigation.due_date %}
+                <small class="text-warning d-block mt-1">
+                  <i class="fas fa-info-circle"></i> Original due date was {{ mitigation.original_due_date|date:"M d, Y" }}
+                </small>
+              {% endif %}
+              {% if form.due_date.help_text %}
+                <small class="form-text text-muted">{{ form.due_date.help_text }}</small>
+              {% endif %}
+              {% if form.due_date.errors %}
+                <div class="text-danger small">{{ form.due_date.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              <label for="{{ form.evidence.id_for_label }}" class="form-label">
+                {{ form.evidence.label }}
+              </label>
+              {% if mitigation.evidence %}
+                <div class="mb-2">
+                  <small class="text-muted">Current: <a href="{{ mitigation.evidence.url }}" target="_blank">{{ mitigation.evidence.name }}</a></small>
+                </div>
+              {% endif %}
+              {{ form.evidence }}
+              {% if form.evidence.help_text %}
+                <small class="form-text text-muted">{{ form.evidence.help_text }}</small>
+              {% endif %}
+              {% if form.evidence.errors %}
+                <div class="text-danger small">{{ form.evidence.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="mb-4">
+              <div class="alert alert-reassessment">
+                <div class="form-check">
+                  {{ form.trigger_reassessment }}
+                  <label class="form-check-label" for="{{ form.trigger_reassessment.id_for_label }}">
+                    {{ form.trigger_reassessment.label }}
+                  </label>
+                </div>
+                {% if form.trigger_reassessment.help_text %}
+                  <small class="text-muted d-block mt-1">{{ form.trigger_reassessment.help_text }}</small>
+                {% endif %}
+                <small class="text-muted d-block mt-2">
+                  <i class="fas fa-info-circle me-1"></i>
+                  <strong>Note:</strong> Completing a mitigation automatically triggers a risk reassessment to evaluate if the risk rating should be updated.
+                </small>
+              </div>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-1"></i> Update Mitigation
+              </button>
+              <a href="{% url 'mitigation_progress_trail' mitigation.pk %}" class="btn btn-outline-info">
+                <i class="fas fa-history me-1"></i> View Progress Trail
+              </a>
+              <a href="{% url 'risk_detail' risk_id=risk.risk_id %}" class="btn btn-outline-secondary">
+                Cancel
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Recent Progress History -->
+      {% if progress_history %}
+      <div class="card shadow-sm mt-4">
+        <div class="card-header bg-light">
+          <h6 class="mb-0"><i class="fas fa-history me-2"></i>Recent Updates</h6>
+        </div>
+        <div class="card-body">
+          <div class="list-group list-group-flush">
+            {% for log in progress_history|slice:":5" %}
+            <div class="list-group-item px-0">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <span class="badge bg-{% if log.action_type == 'postponed' %}info{% elif log.action_type == 'completion_failed' %}danger{% elif log.action_type == 'partial_completion' %}warning{% else %}primary{% endif %} mb-1">
+                    {{ log.get_action_type_display }}
+                  </span>
+                  <small class="text-muted d-block">
+                    {{ log.created_at|date:"M d, Y H:i" }} by {{ log.user.get_full_name|default:log.user.username|default:"System" }}
+                  </small>
+                </div>
+                <small class="text-muted">{{ log.completion_percentage }}%</small>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <a href="{% url 'mitigation_progress_trail' mitigation.pk %}" class="btn btn-sm btn-outline-primary mt-3 w-100">
+            View Full History
+          </a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow-sm mb-3">
+        <div class="card-header bg-light">
+          <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Status Guide</h6>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <span class="status-badge status-pending">Pending</span>
+            <p class="small mt-2 mb-0">Not yet started.</p>
+          </div>
+          <div class="mb-3">
+            <span class="status-badge status-in_progress">In Progress</span>
+            <p class="small mt-2 mb-0">Currently being implemented.</p>
+          </div>
+          <div class="mb-3">
+            <span class="status-badge status-complete">Complete</span>
+            <p class="small mt-2 mb-0">Fully implemented and verified.</p>
+          </div>
+          <div class="mb-3">
+            <span class="badge bg-info">Postponed</span>
+            <p class="small mt-2 mb-0">Delayed to a future date.</p>
+          </div>
+          <div class="mb-3">
+            <span class="badge bg-warning">Partially Implemented</span>
+            <p class="small mt-2 mb-0">Only some aspects completed.</p>
+          </div>
+          <div class="mb-0">
+            <span class="badge bg-danger">Not Achieved</span>
+            <p class="small mt-2 mb-0">Could not be completed.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm">
+        <div class="card-header bg-light">
+          <h6 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Best Practices</h6>
+        </div>
+        <div class="card-body">
+          <ul class="small mb-0 ps-3">
+            <li class="mb-2">Update completion percentage regularly</li>
+            <li class="mb-2">Document reasons for postponement or failure</li>
+            <li class="mb-2">Record lessons learned for future planning</li>
+            <li class="mb-0">Upload evidence for transparency</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const statusSelect = document.getElementById('{{ form.status.id_for_label }}');
+  const postponementFields = document.getElementById('postponementFields');
+  const failureFields = document.getElementById('failureFields');
+  
+  function toggleConditionalFields() {
+    const status = statusSelect.value;
+    
+    // Show/hide postponement fields
+    if (status === 'postponed') {
+      postponementFields.style.display = 'block';
+    } else {
+      postponementFields.style.display = 'none';
+    }
+    
+    // Show/hide failure fields
+    if (status === 'not_achieved') {
+      failureFields.style.display = 'block';
+    } else {
+      failureFields.style.display = 'none';
+    }
+  }
+  
+  statusSelect.addEventListener('change', toggleConditionalFields);
+  toggleConditionalFields(); // Initial check
+});
+</script>
+{% endblock %}

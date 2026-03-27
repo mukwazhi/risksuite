@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>RiskMate AI - Audit Program</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-color: #f8f9fa;
+            --dark-color: #2c3e50;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), #1a2530);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .logo i {
+            color: var(--secondary-color);
+        }
+
+        .ai-badge {
+            background: linear-gradient(135deg, #ff8a00, #e52e71);
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+
+        nav ul li {
+            margin-left: 20px;
+        }
+
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        nav ul li a:hover, nav ul li a.active {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .sidebar {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            height: fit-content;
+        }
+
+        .sidebar h3 {
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .business-units {
+            list-style: none;
+        }
+
+        .business-units li {
+            margin-bottom: 10px;
+        }
+
+        .business-units a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            background-color: var(--light-color);
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--dark-color);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .business-units a:hover, .business-units a.active {
+            background-color: var(--secondary-color);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .content-area {
+            background-color: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .tab-container {
+            margin-bottom: 20px;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 25px;
+        }
+
+        .tab {
+            padding: 12px 25px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .tab.active {
+            border-bottom: 3px solid var(--secondary-color);
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-header h2 {
+            color: var(--primary-color);
+        }
+
+        .risk-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .risk-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            border-left: 4px solid var(--warning-color);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .risk-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+
+        .risk-card.high {
+            border-left-color: var(--accent-color);
+        }
+
+        .risk-card.medium {
+            border-left-color: var(--warning-color);
+        }
+
+        .risk-card.low {
+            border-left-color: var(--success-color);
+        }
+
+        .risk-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .risk-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--dark-color);
+        }
+
+        .risk-level {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .risk-level.high {
+            background-color: var(--accent-color);
+        }
+
+        .risk-level.medium {
+            background-color: var(--warning-color);
+        }
+
+        .risk-level.low {
+            background-color: var(--success-color);
+        }
+
+        .risk-description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .risk-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .audit-program-section {
+            margin-bottom: 30px;
+        }
+
+        .program-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .program-title {
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .program-status {
+            display: flex;
+            gap: 10px;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .status-badge.completed {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .status-badge.in-progress {
+            background-color: var(--warning-color);
+            color: white;
+        }
+
+        .status-badge.not-started {
+            background-color: #95a5a6;
+            color: white;
+        }
+
+        .test-item {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: var(--transition);
+        }
+
+        .test-item:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .test-title {
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+
+        .test-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .test-description {
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        .test-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .test-procedure {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 3px solid var(--secondary-color);
+        }
+
+        .test-procedure h4 {
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .test-evidence {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 3px solid var(--success-color);
+        }
+
+        .test-evidence h4 {
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .test-results {
+            margin-top: 15px;
+        }
+
+        .result-options {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .result-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .result-option input {
+            margin-right: 5px;
+        }
+
+        .test-notes {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background-color: var(--accent-color);
+        }
+
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--secondary-color);
+            color: var(--secondary-color);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+        }
+
+        .btn-success:hover {
+            background-color: #219653;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .stat-card.high {
+            border-top: 4px solid var(--accent-color);
+        }
+
+        .stat-card.medium {
+            border-top: 4px solid var(--warning-color);
+        }
+
+        .stat-card.low {
+            border-top: 4px solid var(--success-color);
+        }
+
+        .stat-card.total {
+            border-top: 4px solid var(--secondary-color);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #777;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            color: #666;
+            font-size: 0.9rem;
+            border-top: 1px solid #eee;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            nav ul {
+                margin-top: 15px;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .risk-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .test-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>RiskMate AI</span>
+                    <span class="ai-badge">Audit Program</span>
+                </div>
+                <nav>
+                    <ul>
+                        <li><a href="#"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                        <li><a href="#" class="active"><i class="fas fa-clipboard-check"></i> Audit Program</a></li>
+                        <li><a href="#"><i class="fas fa-exclamation-triangle"></i> Risks</a></li>
+                        <li><a href="#"><i class="fas fa-file-contract"></i> Reports</a></li>
+                        <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="main-content">
+            <aside class="sidebar">
+                <h3><i class="fas fa-building"></i> Business Units</h3>
+                <ul class="business-units">
+                    <li><a data-unit="procurement" class="active"><i class="fas fa-shopping-cart"></i> Procurement Cycle</a></li>
+                    <li><a data-unit="finance"><i class="fas fa-chart-line"></i> Finance & Accounting</a></li>
+                    <li><a data-unit="hr"><i class="fas fa-users"></i> Human Resources</a></li>
+                    <li><a data-unit="it"><i class="fas fa-laptop-code"></i> IT & Cybersecurity</a></li>
+                    <li><a data-unit="operations"><i class="fas fa-cogs"></i> Operations</a></li>
+                    <li><a data-unit="sales"><i class="fas fa-shopping-bag"></i> Sales & Marketing</a></li>
+                    <li><a data-unit="compliance"><i class="fas fa-gavel"></i> Compliance & Legal</a></li>
+                </ul>
+            </aside>
+
+            <main class="content-area">
+                <div class="tab-container">
+                    <div class="tabs">
+                        <div class="tab active" data-tab="program"><i class="fas fa-clipboard-list"></i> Audit Program</div>
+                        <div class="tab" data-tab="progress"><i class="fas fa-chart-line"></i> Progress Tracking</div>
+                        <div class="tab" data-tab="results"><i class="fas fa-file-alt"></i> Test Results</div>
+                    </div>
+
+                    <div class="tab-content active" id="program">
+                        <div class="section-header">
+                            <h2 id="program-title">Procurement Cycle Audit Program</h2>
+                            <div class="action-buttons">
+                                <button class="btn btn-outline"><i class="fas fa-download"></i> Export Program</button>
+                                <button class="btn"><i class="fas fa-plus"></i> Add Test</button>
+                            </div>
+                        </div>
+                        <p>Comprehensive audit program linked to identified risks for the selected business unit.</p>
+
+                        <div class="stats-cards">
+                            <div class="stat-card total">
+                                <div class="stat-label">Total Tests</div>
+                                <div class="stat-value" id="total-tests">0</div>
+                            </div>
+                            <div class="stat-card completed">
+                                <div class="stat-label">Completed</div>
+                                <div class="stat-value" id="completed-tests">0</div>
+                            </div>
+                            <div class="stat-card in-progress">
+                                <div class="stat-label">In Progress</div>
+                                <div class="stat-value" id="inprogress-tests">0</div>
+                            </div>
+                            <div class="stat-card not-started">
+                                <div class="stat-label">Not Started</div>
+                                <div class="stat-value" id="notstarted-tests">0</div>
+                            </div>
+                        </div>
+
+                        <div class="audit-program-section">
+                            <div class="program-header">
+                                <h3 class="program-title"><i class="fas fa-exclamation-triangle"></i> High Risk Area Tests</h3>
+                                <div class="program-status">
+                                    <span class="status-badge completed">3 Completed</span>
+                                    <span class="status-badge in-progress">2 In Progress</span>
+                                    <span class="status-badge not-started">1 Not Started</span>
+                                </div>
+                            </div>
+                            <div id="high-risk-tests">
+                                <!-- High risk tests will be dynamically added here -->
+                            </div>
+                        </div>
+
+                        <div class="audit-program-section">
+                            <div class="program-header">
+                                <h3 class="program-title"><i class="fas fa-exclamation"></i> Medium Risk Area Tests</h3>
+                                <div class="program-status">
+                                    <span class="status-badge completed">2 Completed</span>
+                                    <span class="status-badge in-progress">1 In Progress</span>
+                                    <span class="status-badge not-started">2 Not Started</span>
+                                </div>
+                            </div>
+                            <div id="medium-risk-tests">
+                                <!-- Medium risk tests will be dynamically added here -->
+                            </div>
+                        </div>
+
+                        <div class="audit-program-section">
+                            <div class="program-header">
+                                <h3 class="program-title"><i class="fas fa-info-circle"></i> Low Risk Area Tests</h3>
+                                <div class="program-status">
+                                    <span class="status-badge completed">1 Completed</span>
+                                    <span class="status-badge in-progress">0 In Progress</span>
+                                    <span class="status-badge not-started">1 Not Started</span>
+                                </div>
+                            </div>
+                            <div id="low-risk-tests">
+                                <!-- Low risk tests will be dynamically added here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="progress">
+                        <div class="section-header">
+                            <h2>Audit Program Progress</h2>
+                            <div class="action-buttons">
+                                <button class="btn"><i class="fas fa-sync-alt"></i> Refresh</button>
+                            </div>
+                        </div>
+                        <p>Track the progress of your audit program implementation.</p>
+
+                        <div class="stats-cards">
+                            <div class="stat-card total">
+                                <div class="stat-label">Overall Progress</div>
+                                <div class="stat-value" id="overall-progress">0%</div>
+                            </div>
+                            <div class="stat-card high">
+                                <div class="stat-label">High Risk Progress</div>
+                                <div class="stat-value" id="high-progress">0%</div>
+                            </div>
+                            <div class="stat-card medium">
+                                <div class="stat-label">Medium Risk Progress</div>
+                                <div class="stat-value" id="medium-progress">0%</div>
+                            </div>
+                            <div class="stat-card low">
+                                <div class="stat-label">Low Risk Progress</div>
+                                <div class="stat-value" id="low-progress">0%</div>
+                            </div>
+                        </div>
+
+                        <div class="progress-details">
+                            <h3>Progress by Business Unit</h3>
+                            <div id="progress-chart">
+                                <!-- Progress chart will be dynamically added here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="results">
+                        <div class="section-header">
+                            <h2>Test Results Summary</h2>
+                            <div class="action-buttons">
+                                <button class="btn"><i class="fas fa-download"></i> Export Results</button>
+                            </div>
+                        </div>
+                        <p>Summary of test results and identified issues.</p>
+
+                        <div class="stats-cards">
+                            <div class="stat-card total">
+                                <div class="stat-label">Tests Completed</div>
+                                <div class="stat-value" id="tests-completed">0</div>
+                            </div>
+                            <div class="stat-card success">
+                                <div class="stat-label">Tests Passed</div>
+                                <div class="stat-value" id="tests-passed">0</div>
+                            </div>
+                            <div class="stat-card danger">
+                                <div class="stat-label">Tests Failed</div>
+                                <div class="stat-value" id="tests-failed">0</div>
+                            </div>
+                            <div class="stat-card warning">
+                                <div class="stat-label">Issues Identified</div>
+                                <div class="stat-value" id="issues-identified">0</div>
+                            </div>
+                        </div>
+
+                        <div class="results-details">
+                            <h3>Detailed Test Results</h3>
+                            <div id="results-list">
+                                <!-- Results will be dynamically added here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div class="modal" id="test-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Audit Test Details</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div id="test-modal-content">
+                <!-- Test details will be dynamically added here -->
+            </div>
+            <div class="action-buttons" style="margin-top: 20px;">
+                <button class="btn btn-success" id="save-test-results"><i class="fas fa-save"></i> Save Results</button>
+                <button class="btn btn-danger" id="close-test-modal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>RiskMate AI &copy; 2025 | Comprehensive Audit Program Management</p>
+        </div>
+    </footer>
+
+    <script>
+        // Full risk dataset keyed by id; includes unit so we can render per business unit
+        const riskData = {
+            // Procurement
+            'vendor-selection': {
+                id: 'vendor-selection',
+                unit: 'procurement',
+                title: 'Inadequate Vendor Selection Process',
+                description: 'Risk of selecting vendors without proper due diligence, leading to poor quality goods/services or compliance issues.',
+                level: 'high'
+            },
+            'contract-management': {
+                id: 'contract-management',
+                unit: 'procurement',
+                title: 'Poor Contract Management',
+                description: 'Risk of unfavorable contract terms, missing key clauses, or failure to monitor contract compliance.',
+                level: 'high'
+            },
+            'purchase-approvals': {
+                id: 'purchase-approvals',
+                unit: 'procurement',
+                title: 'Weak Purchase Approval Controls',
+                description: 'Risk of unauthorized purchases, exceeding budget limits, or purchases without proper justification.',
+                level: 'medium'
+            },
+            'receiving-process': {
+                id: 'receiving-process',
+                unit: 'procurement',
+                title: 'Ineffective Receiving Process',
+                description: 'Risk of accepting incorrect quantities, damaged goods, or not verifying against purchase orders.',
+                level: 'medium'
+            },
+
+            // Finance & Accounting
+            'financial-reporting': {
+                id: 'financial-reporting',
+                unit: 'finance',
+                title: 'Inaccurate Financial Reporting',
+                description: 'Risk of misstated financial statements due to poor reconciliations or manual error.',
+                level: 'high'
+            },
+            'segregation-duties': {
+                id: 'segregation-duties',
+                unit: 'finance',
+                title: 'Inadequate Segregation of Duties',
+                description: 'Concentration of incompatible duties increases risk of fraud.',
+                level: 'high'
+            },
+
+            // Human Resources
+            'onboarding-controls': {
+                id: 'onboarding-controls',
+                unit: 'hr',
+                title: 'Weak Onboarding Controls',
+                description: 'Inadequate vetting of new hires and missing documentation.',
+                level: 'medium'
+            },
+
+            // IT & Cybersecurity
+            'patch-management': {
+                id: 'patch-management',
+                unit: 'it',
+                title: 'Poor Patch Management',
+                description: 'Delayed or inconsistent application of security patches.',
+                level: 'high'
+            },
+            'access-management': {
+                id: 'access-management',
+                unit: 'it',
+                title: 'Weak Access Management',
+                description: 'Excessive privileges and unmanaged user accounts.',
+                level: 'high'
+            },
+
+            // Operations
+            'capacity-planning': {
+                id: 'capacity-planning',
+                unit: 'operations',
+                title: 'Inadequate Capacity Planning',
+                description: 'Operations unable to meet demand due to poor planning.',
+                level: 'medium'
+            },
+
+            // Sales & Marketing
+            'pricing-controls': {
+                id: 'pricing-controls',
+                unit: 'sales',
+                title: 'Uncontrolled Pricing Changes',
+                description: 'Ad-hoc pricing changes without approvals impacting margins.',
+                level: 'medium'
+            },
+
+            // Compliance & Legal
+            'regulatory-compliance': {
+                id: 'regulatory-compliance',
+                unit: 'compliance',
+                title: 'Regulatory Non-Compliance',
+                description: 'Failure to comply with applicable laws and regulations.',
+                level: 'high'
+            }
+        };
+
+        // Audit tests linked to risks
+        const auditTests = {
+            'vendor-selection': [
+                {
+                    id: 'test-vendor-1',
+                    title: 'Vendor Selection Policy Review',
+                    description: 'Review the existence and adequacy of the vendor selection policy and procedures.',
+                    procedure: '1. Request and review the vendor selection policy document\n2. Verify that the policy includes criteria for vendor evaluation\n3. Check that the policy requires documentation of vendor assessments\n4. Confirm that the policy specifies approval authorities',
+                    evidence: 'Vendor selection policy, documented procedures, approval matrices',
+                    status: 'completed',
+                    result: 'passed',
+                    notes: 'Policy exists but needs updating to include cybersecurity requirements for vendors.'
+                },
+                {
+                    id: 'test-vendor-2',
+                    title: 'Vendor Due Diligence Testing',
+                    description: 'Test whether proper due diligence is performed for new vendors.',
+                    procedure: '1. Select a sample of new vendors from the past 12 months\n2. Review documentation of due diligence performed\n3. Verify that financial stability checks were conducted\n4. Confirm that reference checks were performed where applicable',
+                    evidence: 'Vendor files, due diligence checklists, financial reports, reference check documentation',
+                    status: 'in-progress',
+                    result: '',
+                    notes: ''
+                }
+            ],
+            'contract-management': [
+                {
+                    id: 'test-contract-1',
+                    title: 'Contract Review Process Evaluation',
+                    description: 'Evaluate the contract review and approval process.',
+                    procedure: '1. Review the contract management policy\n2. Select a sample of contracts executed in the past year\n3. Verify that contracts were reviewed by legal counsel\n4. Check that key contract terms are documented and tracked',
+                    evidence: 'Contract management policy, executed contracts, legal review documentation, contract register',
+                    status: 'completed',
+                    result: 'failed',
+                    notes: '30% of contracts sampled did not have evidence of legal review.'
+                },
+                {
+                    id: 'test-contract-2',
+                    title: 'Contract Compliance Monitoring',
+                    description: 'Test whether contract compliance is monitored effectively.',
+                    procedure: '1. Review process for monitoring contract compliance\n2. Select a sample of active contracts\n3. Verify that key obligations are being tracked\n4. Check that expiration dates are monitored and renewals are addressed timely',
+                    evidence: 'Contract compliance reports, tracking spreadsheets, renewal notifications',
+                    status: 'not-started',
+                    result: '',
+                    notes: ''
+                }
+            ],
+            'purchase-approvals': [
+                {
+                    id: 'test-purchase-1',
+                    title: 'Purchase Approval Controls Testing',
+                    description: 'Test the effectiveness of purchase approval controls.',
+                    procedure: '1. Review purchase approval policy and thresholds\n2. Select a sample of purchases above approval thresholds\n3. Verify that proper approvals were obtained\n4. Check that business justification is documented',
+                    evidence: 'Purchase orders, approval documentation, policy documents',
+                    status: 'in-progress',
+                    result: '',
+                    notes: ''
+                }
+            ],
+            'receiving-process': [
+                {
+                    id: 'test-receiving-1',
+                    title: 'Receiving Process Evaluation',
+                    description: 'Evaluate the effectiveness of the goods receiving process.',
+                    procedure: '1. Observe the receiving process in operation\n2. Review receiving documentation for a sample of deliveries\n3. Verify that goods are checked against purchase orders\n4. Check that damaged goods are properly documented and handled',
+                    evidence: 'Receiving reports, delivery notes, damage reports, process observation notes',
+                    status: 'not-started',
+                    result: '',
+                    notes: ''
+                }
+            ]
+        };
+
+        // Utility: list of units and display names
+        const units = {
+            procurement: 'Procurement Cycle',
+            finance: 'Finance & Accounting',
+            hr: 'Human Resources',
+            it: 'IT & Cybersecurity',
+            operations: 'Operations',
+            sales: 'Sales & Marketing',
+            compliance: 'Compliance & Legal'
+        };
+
+        // Render audit program for a chosen unit
+        function renderAuditProgram(unitKey) {
+            const programTitle = document.getElementById('program-title');
+            programTitle.textContent = units[unitKey] + ' Audit Program';
+
+            const risksForUnit = Object.values(riskData).filter(r => r.unit === unitKey);
+            
+            // Clear existing tests
+            document.getElementById('high-risk-tests').innerHTML = '';
+            document.getElementById('medium-risk-tests').innerHTML = '';
+            document.getElementById('low-risk-tests').innerHTML = '';
+
+            // Update test statistics
+            updateTestStats(risksForUnit);
+
+            // Group risks by level
+            const highRisks = risksForUnit.filter(r => r.level === 'high');
+            const mediumRisks = risksForUnit.filter(r => r.level === 'medium');
+            const lowRisks = risksForUnit.filter(r => r.level === 'low');
+
+            // Render tests for each risk level
+            renderRiskTests(highRisks, 'high-risk-tests');
+            renderRiskTests(mediumRisks, 'medium-risk-tests');
+            renderRiskTests(lowRisks, 'low-risk-tests');
+        }
+
+        // Render tests for a group of risks
+        function renderRiskTests(risks, containerId) {
+            const container = document.getElementById(containerId);
+            
+            if (risks.length === 0) {
+                container.innerHTML = '<p>No risks identified for this category.</p>';
+                return;
+            }
+
+            risks.forEach(risk => {
+                const tests = auditTests[risk.id] || [];
+                
+                if (tests.length === 0) {
+                    const noTestsDiv = document.createElement('div');
+                    noTestsDiv.className = 'test-item';
+                    noTestsDiv.innerHTML = `
+                        <div class="test-header">
+                            <div class="test-title">${risk.title}</div>
+                            <div class="test-controls">
+                                <span class="status-badge not-started">No Tests Defined</span>
+                            </div>
+                        </div>
+                        <div class="test-description">
+                            <p>${risk.description}</p>
+                            <p><em>No specific audit tests have been defined for this risk yet.</em></p>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-outline add-test-btn" data-risk="${risk.id}"><i class="fas fa-plus"></i> Add Test</button>
+                        </div>
+                    `;
+                    container.appendChild(noTestsDiv);
+                } else {
+                    tests.forEach(test => {
+                        const testDiv = document.createElement('div');
+                        testDiv.className = 'test-item';
+                        testDiv.innerHTML = `
+                            <div class="test-header">
+                                <div class="test-title">${test.title}</div>
+                                <div class="test-controls">
+                                    <span class="status-badge ${test.status}">${formatStatus(test.status)}</span>
+                                    ${test.result ? `<span class="status-badge ${test.result === 'passed' ? 'completed' : 'danger'}">${test.result === 'passed' ? 'Passed' : 'Failed'}</span>` : ''}
+                                </div>
+                            </div>
+                            <div class="test-description">
+                                <p>${test.description}</p>
+                                <p><strong>Linked Risk:</strong> ${risk.title}</p>
+                            </div>
+                            <div class="test-details">
+                                <div class="test-procedure">
+                                    <h4>Test Procedure</h4>
+                                    <p>${test.procedure.replace(/\n/g, '<br>')}</p>
+                                </div>
+                                <div class="test-evidence">
+                                    <h4>Required Evidence</h4>
+                                    <p>${test.evidence}</p>
+                                </div>
+                            </div>
+                            ${test.notes ? `<div class="test-results"><strong>Notes:</strong> ${test.notes}</div>` : ''}
+                            <div class="action-buttons">
+                                <button class="btn execute-test-btn" data-test="${test.id}"><i class="fas fa-play"></i> Execute Test</button>
+                                <button class="btn btn-outline edit-test-btn" data-test="${test.id}"><i class="fas fa-edit"></i> Edit</button>
+                            </div>
+                        `;
+                        container.appendChild(testDiv);
+                    });
+                }
+            });
+
+            // Add event listeners to buttons
+            document.querySelectorAll('.execute-test-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const testId = btn.getAttribute('data-test');
+                    showTestModal(testId);
+                });
+            });
+
+            document.querySelectorAll('.add-test-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const riskId = btn.getAttribute('data-risk');
+                    alert(`Add test functionality for risk: ${riskId} would open here.`);
+                });
+            });
+        }
+
+        // Update test statistics
+        function updateTestStats(risks) {
+            let totalTests = 0;
+            let completedTests = 0;
+            let inProgressTests = 0;
+            let notStartedTests = 0;
+
+            risks.forEach(risk => {
+                const tests = auditTests[risk.id] || [];
+                totalTests += tests.length;
+                
+                tests.forEach(test => {
+                    if (test.status === 'completed') completedTests++;
+                    else if (test.status === 'in-progress') inProgressTests++;
+                    else if (test.status === 'not-started') notStartedTests++;
+                });
+            });
+
+            document.getElementById('total-tests').textContent = totalTests;
+            document.getElementById('completed-tests').textContent = completedTests;
+            document.getElementById('inprogress-tests').textContent = inProgressTests;
+            document.getElementById('notstarted-tests').textContent = notStartedTests;
+        }
+
+        // Format status for display
+        function formatStatus(status) {
+            return status.split('-').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ');
+        }
+
+        // Show test modal for execution
+        function showTestModal(testId) {
+            // Find the test in our data structure
+            let test = null;
+            let riskTitle = '';
+            
+            for (const riskId in auditTests) {
+                const tests = auditTests[riskId];
+                const foundTest = tests.find(t => t.id === testId);
+                if (foundTest) {
+                    test = foundTest;
+                    riskTitle = riskData[riskId].title;
+                    break;
+                }
+            }
+            
+            if (!test) return;
+            
+            document.getElementById('test-modal-content').innerHTML = `
+                <div class="test-details">
+                    <h4>${test.title}</h4>
+                    <p><strong>Linked Risk:</strong> ${riskTitle}</p>
+                    <p><strong>Description:</strong> ${test.description}</p>
+                    
+                    <div class="test-procedure">
+                        <h4>Test Procedure</h4>
+                        <p>${test.procedure.replace(/\n/g, '<br>')}</p>
+                    </div>
+                    
+                    <div class="test-evidence">
+                        <h4>Required Evidence</h4>
+                        <p>${test.evidence}</p>
+                    </div>
+                    
+                    <div class="test-results">
+                        <h4>Test Results</h4>
+                        <div class="result-options">
+                            <div class="result-option">
+                                <input type="radio" id="result-passed" name="test-result" value="passed" ${test.result === 'passed' ? 'checked' : ''}>
+                                <label for="result-passed">Passed</label>
+                            </div>
+                            <div class="result-option">
+                                <input type="radio" id="result-failed" name="test-result" value="failed" ${test.result === 'failed' ? 'checked' : ''}>
+                                <label for="result-failed">Failed</label>
+                            </div>
+                            <div class="result-option">
+                                <input type="radio" id="result-na" name="test-result" value="na" ${!test.result ? 'checked' : ''}>
+                                <label for="result-na">Not Applicable</label>
+                            </div>
+                        </div>
+                        
+                        <label for="test-notes">Test Notes & Findings:</label>
+                        <textarea id="test-notes" class="test-notes" placeholder="Document your test results, findings, and any issues identified...">${test.notes || ''}</textarea>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('test-modal').style.display = 'flex';
+            
+            // Store test ID for saving
+            document.getElementById('save-test-results').dataset.testId = testId;
+        }
+
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+
+                tab.classList.add('active');
+                document.getElementById(tab.getAttribute('data-tab')).classList.add('active');
+            });
+        });
+
+        // Sidebar business unit switching
+        document.querySelectorAll('.business-units a').forEach(a => {
+            a.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.business-units a').forEach(x => x.classList.remove('active'));
+                a.classList.add('active');
+                const unitKey = a.dataset.unit;
+                renderAuditProgram(unitKey);
+            });
+        });
+
+        // Save test results
+        document.getElementById('save-test-results').addEventListener('click', () => {
+            const testId = document.getElementById('save-test-results').dataset.testId;
+            const result = document.querySelector('input[name="test-result"]:checked').value;
+            const notes = document.getElementById('test-notes').value;
+            
+            // Find and update the test
+            for (const riskId in auditTests) {
+                const tests = auditTests[riskId];
+                const testIndex = tests.findIndex(t => t.id === testId);
+                if (testIndex !== -1) {
+                    auditTests[riskId][testIndex].result = result;
+                    auditTests[riskId][testIndex].notes = notes;
+                    auditTests[riskId][testIndex].status = 'completed';
+                    break;
+                }
+            }
+            
+            // Close modal and refresh view
+            document.getElementById('test-modal').style.display = 'none';
+            
+            // Get current unit and refresh program
+            const currentUnit = document.querySelector('.business-units a.active').dataset.unit;
+            renderAuditProgram(currentUnit);
+            
+            alert('Test results saved successfully!');
+        });
+
+        // Modal close buttons
+        document.querySelectorAll('.close-modal, #close-test-modal').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('test-modal').style.display = 'none';
+            });
+        });
+
+        // Initialize view on load
+        document.addEventListener('DOMContentLoaded', () => {
+            renderAuditProgram('procurement');
+        });
+    </script>
+</body>
+</html>

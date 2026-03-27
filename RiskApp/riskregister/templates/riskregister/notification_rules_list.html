@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}Notifications Removed{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="alert alert-warning">Notification functionality has been removed from this deployment.</div>
+  <p class="text-muted">If you need notifications restored, reintroduce the notification views, utilities and templates.</p>
+</div>
+{% endblock %}
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 5%;">Status</th>
+                            <th style="width: 20%;">Rule Name</th>
+                            <th style="width: 12%;">Type</th>
+                            <th style="width: 12%;">Condition</th>
+                            <th style="width: 10%;">Risk Level</th>
+                            <th style="width: 12%;">Recipients</th>
+                            <th style="width: 8%;">Priority</th>
+                            <th style="width: 10%;">Channels</th>
+                            <th style="width: 11%;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rule in rules %}
+                        <tr>
+                            <td>
+                                <form method="post" action="{% url 'notification_rule_toggle' rule.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm {% if rule.is_active %}btn-success{% else %}btn-secondary{% endif %}" title="{% if rule.is_active %}Active - Click to deactivate{% else %}Inactive - Click to activate{% endif %}">
+                                        <i class="bi bi-{% if rule.is_active %}check-circle-fill{% else %}x-circle{% endif %}"></i>
+                                    </button>
+                                </form>
+                            </td>
+                            <td>
+                                <strong>{{ rule.name }}</strong>
+                                {% if rule.description %}
+                                <br><small class="text-muted">{{ rule.description|truncatewords:10 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">{{ rule.get_rule_type_display }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ rule.get_condition_display }}</span>
+                                {% if rule.condition_value %}
+                                <br><small class="text-muted">{{ rule.condition_value }} days</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if rule.risk_level_filter %}
+                                <span class="badge bg-{% if rule.risk_level_filter == 'critical' %}danger{% elif rule.risk_level_filter == 'high' %}warning{% elif rule.risk_level_filter == 'medium' %}info{% else %}secondary{% endif %}">
+                                    {{ rule.risk_level_filter|title }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">All</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ rule.get_recipient_type_display }}</small>
+                                {% if rule.specific_user %}
+                                <br><small class="text-muted">{{ rule.specific_user.get_full_name }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ rule.priority }}</span>
+                            </td>
+                            <td>
+                                {% if rule.notify_via_email %}
+                                <i class="bi bi-envelope-fill text-primary" title="Email"></i>
+                                {% endif %}
+                                {% if rule.notify_in_app %}
+                                <i class="bi bi-app-indicator text-success" title="In-App"></i>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'notification_rule_edit' rule.pk %}" class="btn btn-outline-secondary" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'notification_rule_delete' rule.pk %}" class="btn btn-outline-secondary" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-bell-slash" style="font-size: 3rem; color: #ccc;"></i>
+                <p class="text-muted mt-3">No notification rules configured yet.</p>
+                <a href="{% url 'notification_rule_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Create Your First Rule
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Help Section -->
+    <div class="card mt-4">
+        <div class="card-header bg-info text-white">
+            <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>How Notification Rules Work</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Rule Types:</h6>
+                    <ul>
+                        <li><strong>Mitigation Due Date:</strong> Notify about upcoming or overdue mitigation actions</li>
+                        <li><strong>Assessment Schedule:</strong> Notify about scheduled risk assessments</li>
+                        <li><strong>Risk Level Change:</strong> Notify when risk severity changes</li>
+                        <li><strong>Indicator Breach:</strong> Notify when KPI indicators breach thresholds</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>Conditions:</h6>
+                    <ul>
+                        <li><strong>Is Overdue:</strong> Trigger when item is past due date</li>
+                        <li><strong>Due in X Days:</strong> Trigger X days before due date</li>
+                        <li><strong>Overdue by X Days:</strong> Trigger when X days overdue</li>
+                        <li><strong>Risk Level Filters:</strong> Only trigger for specific risk levels</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="alert alert-warning mt-3 mb-0">
+                <strong>Note:</strong> Rules are processed automatically by the system scheduler. Use the "Test Rules" button to manually trigger rule processing.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

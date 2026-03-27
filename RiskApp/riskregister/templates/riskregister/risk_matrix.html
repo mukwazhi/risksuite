@@ -1,0 +1,90 @@
+
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Risk Matrix{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .matrix-legend { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  .legend-swatch { width:18px; height:18px; border-radius:3px; display:inline-block; margin-right:4px; }
+  #riskScatterChart { height: 500px; max-width: 900px; margin: 0 auto; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-3 mt-3">
+    <div>
+      <h3 class="mb-0"><i class="fas fa-chart-scatter me-2 text-primary"></i>Risk Matrix</h3>
+      <div class="text-muted small">5×5 Matrix: Impact (Y-axis) vs Likelihood (X-axis)</div>
+    </div>
+    <div class="matrix-legend">
+      <div class="me-2 small text-muted fw-bold">Legend:</div>
+      <div><span class="legend-swatch" style="background:#a71d2a"></span> Critical (20-25)</div>
+      <div><span class="legend-swatch" style="background:#dc3545"></span> High (15-19)</div>
+      <div><span class="legend-swatch" style="background:#fd7e14"></span> Medium (8-14)</div>
+      <div><span class="legend-swatch" style="background:#198754"></span> Low (1-7)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body p-3">
+      <div id="riskScatterChart"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const matrixData = JSON.parse('{{ matrix_json|escapejs }}');
+    const riskDetailUrlTemplate = "{% url 'risk_detail' 'RISK_ID_PLACEHOLDER' %}";
+
+    function showEmpty(msg) { const c = document.getElementById('riskScatterChart'); if (c) c.innerHTML = '<div class="text-center text-muted p-4">' + msg + '</div>'; }
+
+    function initMatrix() {
+      try {
+        const lowRisks = [], mediumRisks = [], highRisks = [], criticalRisks = [];
+        matrixData.forEach(risk => {
+          const point = { x: risk.likelihood, y: risk.impact, name: risk.id, title: risk.name, score: risk.score, riskId: risk.id };
+          if (risk.score >= 20) criticalRisks.push(point);
+          else if (risk.score >= 15) highRisks.push(point);
+          else if (risk.score >= 8) mediumRisks.push(point);
+          else lowRisks.push(point);
+        });
+
+        Highcharts.chart('riskScatterChart', {
+          chart: { type: 'scatter', zoomType: 'xy', backgroundColor: '#ffffff', height: 500 },
+          title: { text: null },
+          xAxis: { title: { text: 'Likelihood', style: { fontWeight: 'bold', fontSize: '14px' } }, min: 0.5, max: 5.5, tickInterval: 1, gridLineWidth: 1, gridLineColor: '#e9ecef' },
+          yAxis: { title: { text: 'Impact', style: { fontWeight: 'bold', fontSize: '14px' } }, min: 0.5, max: 5.5, tickInterval: 1, gridLineWidth: 1, gridLineColor: '#e9ecef' },
+          legend: { enabled: true, align: 'right', verticalAlign: 'top', layout: 'vertical' },
+          plotOptions: { scatter: { marker: { radius: 8, symbol: 'circle' }, tooltip: { headerFormat: '<b>{series.name}</b><br>', pointFormat: '{point.name}: {point.title}<br/>Score: {point.score} (L:{point.x} × I:{point.y})' }, jitter: { x: 0.15, y: 0.15 } } },
+          series: [ { name: 'Low (1-7)', color: '#198754', data: lowRisks, cursor: 'pointer', point: { events: { click: function() { window.location.href = riskDetailUrlTemplate.replace('RISK_ID_PLACEHOLDER', this.options.riskId); } } } }, { name: 'Medium (8-14)', color: '#fd7e14', data: mediumRisks, cursor: 'pointer', point: { events: { click: function() { window.location.href = riskDetailUrlTemplate.replace('RISK_ID_PLACEHOLDER', this.options.riskId); } } } }, { name: 'High (15-19)', color: '#dc3545', data: highRisks, cursor: 'pointer', point: { events: { click: function() { window.location.href = riskDetailUrlTemplate.replace('RISK_ID_PLACEHOLDER', this.options.riskId); } } } }, { name: 'Critical (20-25)', color: '#a71d2a', data: criticalRisks, cursor: 'pointer', point: { events: { click: function() { window.location.href = riskDetailUrlTemplate.replace('RISK_ID_PLACEHOLDER', this.options.riskId); } } } } ],
+          credits: { enabled: false },
+          exporting: { enabled: true }
+        });
+      } catch (e) { console.error('Matrix init error:', e); showEmpty('Unable to render matrix. See console for details.'); }
+    }
+
+    function loadScript(url) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = url; s.onload = res; s.onerror = () => rej(new Error('Failed to load ' + url)); document.head.appendChild(s); }); }
+
+    if (typeof Highcharts === 'undefined') {
+          const cdns = [
+            '{% static "vendor/highcharts/highcharts.js" %}',
+            'https://code.highcharts.com/highcharts.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.1.0/highcharts.min.js',
+            'https://cdn.jsdelivr.net/npm/highcharts@11.1.0/highcharts.min.js'
+          ];
+      let i = 0;
+      function tryNext() {
+        if (i >= cdns.length) { console.error('All Highcharts CDN attempts failed for matrix'); showEmpty('Chart library failed to load.'); return; }
+        const url = cdns[i++];
+        loadScript(url).then(() => { Promise.all([loadScript('https://code.highcharts.com/modules/exporting.js').catch(()=>{}), loadScript('https://code.highcharts.com/modules/export-data.js').catch(()=>{}), loadScript('https://code.highcharts.com/modules/accessibility.js').catch(()=>{})]).finally(() => initMatrix()); }).catch(err => { console.warn('Failed to load', url, err); tryNext(); });
+      }
+      tryNext();
+    } else { initMatrix(); }
+  });
+</script>
+{% endblock %}
