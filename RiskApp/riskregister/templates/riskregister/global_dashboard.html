@@ -1,57 +1,97 @@
 {% extends 'riskregister/base.html' %}
 {% block content %}
-<div class="container py-4">
-  <h1>Statistics</h1>
-  <!-- Weighted Risk Summary (moved from main dashboard) -->
-  <div class="row mb-4">
-    <div class="col-lg-4 mb-3">
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Global Statistics Dashboard</h1>
+    <div>
+      <a href="{% url 'statistics' %}" class="btn btn-outline-secondary btn-sm me-2">Refresh</a>
+      <a href="{% url 'dashboard' %}" class="btn btn-outline-primary btn-sm">Main Dashboard</a>
+    </div>
+  </div>
+
+  <!-- Top summary cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-md-3">
       <div class="card border-0 shadow-sm h-100">
-        <div class="card-header bg-white py-2">
-          <h5 class="mb-0 fw-bold"><i class="fas fa-weight-hanging text-primary me-2"></i> Weighted Risk Score</h5>
-        </div>
-        <div class="card-body">
-          <div class="p-3 text-center">
-            <h3 class="fw-bold mb-1">{{ overall_weighted_average }} / 25</h3>
-            <small class="text-muted">Overall weighted average risk (category weight scale 1–10)</small>
-          </div>
-          <hr>
-          <div class="p-2 text-center">
-            <small class="text-muted">Weighted total: <span class="badge {% if overall_weighted_average >= 20 %}bg-danger{% elif overall_weighted_average >= 15 %}bg-danger{% elif overall_weighted_average >= 8 %}bg-warning text-dark{% else %}bg-success{% endif %}">{{ overall_weighted_total }}</span></small>
-          </div>
+        <div class="card-body text-center py-3">
+          <div class="text-muted small">Total Risks</div>
+          <div id="totalRisks" class="fs-3 fw-bold mt-1">0</div>
         </div>
       </div>
     </div>
-
-    <div class="col-lg-8 mb-3">
+    <div class="col-sm-6 col-md-3">
       <div class="card border-0 shadow-sm h-100">
-        <div class="card-header bg-white py-2">
-          <h5 class="mb-0 fw-bold"><i class="fas fa-layer-group text-primary me-2"></i> Per-Category Weighted Scores</h5>
+        <div class="card-body text-center py-3">
+          <div class="text-muted small">High / Breach</div>
+          <div class="fs-3 fw-bold text-danger mt-1">{{ breach_count }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center py-3">
+          <div class="text-muted small">Caution</div>
+          <div class="fs-3 fw-bold text-warning mt-1">{{ caution_count }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center py-3">
+          <div class="text-muted small">OK / Low</div>
+          <div class="fs-3 fw-bold text-success mt-1">{{ ok_count }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts row -->
+  <div class="row g-3 mb-4">
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h6 class="mb-0 fw-bold"><i class="fas fa-chart-pie me-2 text-primary"></i> Risks by Category</h6>
+        </div>
+        <div class="card-body">
+          <canvas id="categoryChart" style="height:260px;"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h6 class="mb-0 fw-bold"><i class="fas fa-tasks me-2 text-primary"></i> Mitigation Status</h6>
+        </div>
+        <div class="card-body">
+          <canvas id="mitigationChart" style="height:260px;"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Per-category cards and top categories table -->
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header bg-white">
+          <h6 class="mb-0 fw-bold"><i class="fas fa-layer-group me-2 text-primary"></i> Per-Category Weighted Scores</h6>
         </div>
         <div class="card-body">
           <div class="row g-3">
             {% for c in category_weighted_stats %}
-            <div class="col-md-4">
+            <div class="col-md-6 col-lg-4">
               <div class="p-3 border rounded h-100">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                   <h6 class="mb-0 fw-semibold">{{ c.category_name }}</h6>
                   <span class="badge bg-secondary">{{ c.count }}</span>
                 </div>
-
-                <div class="mb-2">
-                  <div class="d-flex align-items-center justify-content-between">
-                    <small class="text-muted">Weight</small>
-                    <span class="badge bg-info">{{ c.weight }}</span>
-                  </div>
+                <div class="mb-2 small text-muted">Weight: <span class="badge bg-info">{{ c.weight }}</span></div>
+                <div class="mb-2 d-flex align-items-center justify-content-between">
+                  <div class="small text-muted">Weighted Avg</div>
+                  <div class="fw-semibold {{ 'text-danger' if c.weighted_score >= 15 else ('text-warning' if c.weighted_score >= 8 else 'text-success') }}">{{ c.weighted_score }}/25</div>
                 </div>
-
-                <div class="mb-2">
-                  <div class="d-flex align-items-center justify-content-between">
-                    <small class="text-muted">Weighted Avg</small>
-                    <span class="badge {% if c.weighted_score >= 20 %}bg-danger{% elif c.weighted_score >= 15 %}bg-danger{% elif c.weighted_score >= 8 %}bg-warning text-dark{% else %}bg-success{% endif %}">{{ c.weighted_score }}/25</span>
-                  </div>
-                  <div class="progress mt-2" style="height:8px;">
-                    <div class="progress-bar {% if c.weighted_score >= 20 %}bg-danger{% elif c.weighted_score >= 15 %}bg-danger{% elif c.weighted_score >= 8 %}bg-warning{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ c.weighted_pct }}%;" aria-valuenow="{{ c.weighted_score }}" aria-valuemin="0" aria-valuemax="25"></div>
-                  </div>
+                <div class="progress mt-2" style="height:8px;">
+                  <div class="progress-bar {% if c.weighted_score >= 20 %}bg-danger{% elif c.weighted_score >= 15 %}bg-danger{% elif c.weighted_score >= 8 %}bg-warning{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ c.weighted_pct }}%;" aria-valuenow="{{ c.weighted_score }}" aria-valuemin="0" aria-valuemax="25"></div>
                 </div>
               </div>
             </div>
@@ -60,9 +100,77 @@
         </div>
       </div>
     </div>
+
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header bg-white">
+          <h6 class="mb-0 fw-bold"><i class="fas fa-list me-2 text-primary"></i> Top Categories</h6>
+        </div>
+        <div class="card-body p-0">
+          <table class="table mb-0">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th class="text-end">Count</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in category_weighted_stats|slice:":6" %}
+              <tr>
+                <td>{{ c.category_name }}</td>
+                <td class="text-end">{{ c.count }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="2">No categories found</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
-  <!-- Charts removed per request -->
+
 </div>
 
-<!-- Charts and scripts removed per user request -->
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const categories = {{ categories_json|safe }} || [];
+  const categoryCounts = {{ category_counts_json|safe }} || [];
+  const mitigationLabels = {{ mitigation_labels_json|safe }} || [];
+  const mitigationCounts = {{ mitigation_counts_json|safe }} || [];
+
+  // Total risks
+  const total = categoryCounts.reduce((a,b)=>a+(b||0),0);
+  document.getElementById('totalRisks').textContent = total;
+
+  // Category pie / doughnut chart
+  const ctxCat = document.getElementById('categoryChart').getContext('2d');
+  new Chart(ctxCat, {
+    type: 'doughnut',
+    data: {
+      labels: categories,
+      datasets: [{
+        data: categoryCounts,
+        backgroundColor: ['#4e73df','#1cc88a','#36b9cc','#f6c23e','#e74a3b','#858796'],
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false }
+  });
+
+  // Mitigation status bar chart
+  const ctxMit = document.getElementById('mitigationChart').getContext('2d');
+  new Chart(ctxMit, {
+    type: 'bar',
+    data: {
+      labels: mitigationLabels,
+      datasets: [{
+        label: 'Count',
+        data: mitigationCounts,
+        backgroundColor: ['#1cc88a','#f6c23e','#e74a3b'],
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero:true } } }
+  });
+</script>
 {% endblock %}
