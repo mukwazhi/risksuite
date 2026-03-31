@@ -88,7 +88,13 @@
                 <div class="mb-2 small text-muted">Weight: <span class="badge bg-info">{{ c.weight }}</span></div>
                 <div class="mb-2 d-flex align-items-center justify-content-between">
                   <div class="small text-muted">Weighted Avg</div>
-                  <div class="fw-semibold {{ 'text-danger' if c.weighted_score >= 15 else ('text-warning' if c.weighted_score >= 8 else 'text-success') }}">{{ c.weighted_score }}/25</div>
+                  {% if c.weighted_score >= 15 %}
+                    <div class="fw-semibold text-danger">{{ c.weighted_score }}/25</div>
+                  {% elif c.weighted_score >= 8 %}
+                    <div class="fw-semibold text-warning">{{ c.weighted_score }}/25</div>
+                  {% else %}
+                    <div class="fw-semibold text-success">{{ c.weighted_score }}/25</div>
+                  {% endif %}
                 </div>
                 <div class="progress mt-2" style="height:8px;">
                   <div class="progress-bar {% if c.weighted_score >= 20 %}bg-danger{% elif c.weighted_score >= 15 %}bg-danger{% elif c.weighted_score >= 8 %}bg-warning{% else %}bg-success{% endif %}" role="progressbar" style="width: {{ c.weighted_pct }}%;" aria-valuenow="{{ c.weighted_score }}" aria-valuemin="0" aria-valuemax="25"></div>
