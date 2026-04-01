@@ -1,0 +1,35 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>500 - Server Error | RiskMate ERP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+      body { background: linear-gradient(135deg,#0f172a 0%,#0b1220 100%); color: #fff; min-height:100vh; display:flex; align-items:center; justify-content:center; }
+      .card { background: rgba(255,255,255,0.03); border: none; max-width:720px; }
+      .code { font-size:96px; font-weight:700; }
+      .muted { color: rgba(255,255,255,0.8); }
+      a.btn-outline-light { border-radius:40px; }
+    </style>
+  </head>
+  <body>
+    <div class="card p-4 shadow">
+      <div class="row g-3 align-items-center">
+        <div class="col-auto text-center">
+          <div class="code text-danger">500</div>
+        </div>
+        <div class="col">
+          <h3 class="mb-1">Server Error</h3>
+          <p class="muted">Sorry — something went wrong on our end. The incident has been logged and we are looking into it.</p>
+          <div class="mt-3">
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-light me-2"><i class="fas fa-home me-1"></i> Back to dashboard</a>
+            <a href="mailto:admin@example.com" class="btn btn-light">Contact support</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
