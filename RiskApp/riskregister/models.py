@@ -2775,6 +2775,26 @@ class NotificationPreference(models.Model):
     def __str__(self):
         return f"NotificationPreference({self.user})"
 
+
+class GlobalNotificationConfig(models.Model):
+    """Singleton configuration for site-wide notification scheduling.
+
+    Superusers can set a single `notify_time` and `frequency` which will be
+    used as the preferred send time for all users when `enabled` is True.
+    Individual user preferences remain used to build the notification content.
+    """
+    enabled = models.BooleanField(default=False, help_text='When enabled, apply the global notify time to all users')
+    notify_time = models.TimeField(null=True, blank=True, help_text='Preferred time of day for site-wide notifications')
+    frequency = models.CharField(max_length=20, choices=NotificationPreference.FREQUENCY_CHOICES, default='daily')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"GlobalNotificationConfig(enabled={self.enabled}, time={self.notify_time}, freq={self.frequency})"
+
+    class Meta:
+        verbose_name = 'Global Notification Configuration'
+        verbose_name_plural = 'Global Notification Configuration'
+
 # and add a migration to create them. They were intentionally removed.
 
 

@@ -65,6 +65,8 @@ urlpatterns = [
     # Notification preferences and test endpoint
     path('notifications/preferences/', views.notification_preferences, name='notification_preferences'),
     path('notifications/test/', views.notification_test_send, name='notification_test_send'),
+    path('notifications/', views.notification_center, name='notification_center'),
+    path('notifications/api/unread-count/', views.notifications_unread_count, name='notifications_unread_count'),
     
     # Assessment Framework
     path('assessments/risk/<int:assessment_id>/', views.risk_assessment_detail, name='risk_assessment_detail'),

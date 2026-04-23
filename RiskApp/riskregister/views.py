@@ -13,7 +13,8 @@ from django.db.models import Prefetch
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 import re
 # Import models
-from .models import Risk, Mitigation, Control, RiskOwner, Department, RiskAssessment
+from .models import Risk, Mitigation, Control, RiskOwner, Department, RiskAssessment, NotificationPreference
+from .utils.notifications import _gather_assessment_items_for_user, _gather_mitigation_items_for_user
 
 # Risk Matrix View (for all risks)
 @login_required
@@ -290,8 +291,6 @@ from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 from .utils.pdf_generator import generate_risk_report_pdf, generate_detailed_risk_report_pdf
 
 
-@login_required
-
 def tasks(request):
     """Tasks overview page showing outstanding assessments, outstanding mitigations,
     and a department risk register. Filters: department, owner, and q (search).
@@ -389,6 +388,9 @@ def risk_owner_dashboard(request):
     """Risk Owner restricted dashboard showing only their owned risks and related tasks."""
     # Check if user is a risk owner - improved method with direct user relationship
     risk_owner = None
+    """Risk Owner restricted dashboard showing only their owned risks and related tasks."""
+    # Check if user is a risk owner - improved method with direct user relationship
+    risk_owner = None
     
     # First try direct user relationship
     if hasattr(request.user, 'risk_owner_profile'):
@@ -481,6 +483,53 @@ def risk_owner_dashboard(request):
 
     return render(request, 'riskregister/risk_owner_dashboard.html', context)
 
+
+# Simple JSON endpoint returning unread notification count (0 or 1).
+# We treat any outstanding items (pending/upcoming/overdue assessments or
+# mitigations) as a single unread notification indicator for the UI.
+def notifications_unread_count(request):
+    from django.http import JsonResponse
+
+    if not request.user.is_authenticated:
+        return JsonResponse({'unread_count': 0})
+
+    # Determine preference (use defaults if none)
+    try:
+        pref = request.user.notification_preference
+    except Exception:
+        pref = None
+
+    # Gather items using helper functions
+    user = request.user
+    try:
+        assess_items, _ = _gather_assessment_items_for_user(user, pref if pref else NotificationPreference(user=user))
+        mitig_items, _ = _gather_mitigation_items_for_user(user, pref if pref else NotificationPreference(user=user))
+    except Exception:
+        return JsonResponse({'unread_count': 0})
+
+    has_items = any(len(v) for v in assess_items.values()) or any(len(v) for v in mitig_items.values())
+    return JsonResponse({'unread_count': 1 if has_items else 0})
+
+
+@login_required
+def notification_center(request):
+    """Minimal notifications center: show gathered assessment and mitigation items."""
+    try:
+        pref = request.user.notification_preference
+    except Exception:
+        pref = None
+
+    try:
+        assess_items, assess_counts = _gather_assessment_items_for_user(request.user, pref if pref else NotificationPreference(user=request.user))
+        mitig_items, mitig_counts = _gather_mitigation_items_for_user(request.user, pref if pref else NotificationPreference(user=request.user))
+    except Exception:
+        assess_items, mitig_items = {}, {}
+
+    context = {
+        'assess_items': assess_items,
+        'mitig_items': mitig_items,
+    }
+    return render(request, 'riskregister/notification_center.html', context)
 
 # Helper function to check if user is superuser
 def is_superuser(user):
@@ -3577,6 +3626,10 @@ def my_activities(request):
 @login_required
 def notification_preferences(request):
     """Allow users to configure their notification preferences and send a test email."""
+    from django.http import HttpResponseNotFound
+    # Only superusers may access notification preference forms via the UI
+    if not request.user.is_superuser:
+        return HttpResponseNotFound('Notification preferences are admin-only.')
     from .models import NotificationPreference
     from .forms import NotificationPreferenceForm, AdminNotificationPreferenceForm
     from .utils.notifications import send_notifications_for_user
@@ -3594,6 +3647,7 @@ def notification_preferences(request):
         pref, _ = NotificationPreference.objects.get_or_create(user=tuser)
         target_user = tuser
     else:
+        # Non-superusers are already blocked above, but keep logic consistent
         pref, _ = NotificationPreference.objects.get_or_create(user=request.user)
         target_user = request.user
 
@@ -3610,7 +3664,7 @@ def notification_preferences(request):
         form_cls = AdminNotificationPreferenceForm if request.user.is_superuser else NotificationPreferenceForm
         form = form_cls(instance=pref)
 
-    template = 'riskregister/notification_preferences.html' if request.user.is_superuser else 'riskregister/notification_preferences_simple.html'
+    template = 'riskregister/notification_preferences.html'
     return render(request, template, {'form': form, 'pref': pref, 'target_user': target_user})
 
 
@@ -3625,17 +3679,16 @@ def notification_test_send(request):
     from .utils.notifications import send_notifications_for_user
 
     # Use console email backend for test sends so output appears in server terminal
-    from django.core.mail import get_connection
-    conn = get_connection(backend='django.core.mail.backends.console.EmailBackend')
+    # Use the project's configured email backend (from settings). For local
+    # development you can set `EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'`.
+    conn = None
 
-    # If staff/superuser requests a test send, produce an aggregated staff summary
-    if request.user.is_staff or request.user.is_superuser:
-        from .utils.notifications import notify_staff_of_outstanding_items
-        # Print aggregated outstanding items to the console connection
-        notify_staff_of_outstanding_items(connection=conn, include_details=True)
-        # Do not render success message to UI (console output is authoritative)
-        return redirect('notification_preferences')
+    from django.http import HttpResponseNotFound
+    # Only superusers may trigger test sends via the UI
+    if not request.user.is_superuser:
+        return HttpResponseNotFound('Test notifications are admin-only.')
 
-    # Normal single-user test
-    sent = send_notifications_for_user(request.user, test=True, connection=conn, actor=request.user, show_queries=False)
+    # For superusers, produce an aggregated staff summary
+    from .utils.notifications import notify_staff_of_outstanding_items
+    notify_staff_of_outstanding_items(connection=conn, include_details=True)
     return redirect('notification_preferences')

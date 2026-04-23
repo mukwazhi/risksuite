@@ -7,6 +7,7 @@ from .models import (
     RiskIndicator, IndicatorMeasurement, PeriodicMeasurementSchedule,
     RiskAssessment, ActivityLog, RiskCategoryImpact, Control
 )
+from .models import NotificationPreference, GlobalNotificationConfig
 from django.db.models import Avg, Count
 from django.shortcuts import render
 from django.urls import path
@@ -41,6 +42,20 @@ class KPIAdmin(admin.ModelAdmin):
     ordering = ('name',)
     list_per_page = 50
     readonly_fields = ('created_at', 'updated_at')
+@admin.register(GlobalNotificationConfig)
+class GlobalNotificationConfigAdmin(admin.ModelAdmin):
+    list_display = ('enabled', 'notify_time', 'frequency', 'updated_at')
+    actions = ['enable_global_notifications', 'disable_global_notifications']
+
+    @admin.action(description='Enable global notifications')
+    def enable_global_notifications(self, request, queryset):
+        queryset.update(enabled=True)
+        self.message_user(request, 'Selected global configs enabled.')
+
+    @admin.action(description='Disable global notifications')
+    def disable_global_notifications(self, request, queryset):
+        queryset.update(enabled=False)
+        self.message_user(request, 'Selected global configs disabled.')
 
 class MitigationInline(admin.TabularInline):
     model = Mitigation

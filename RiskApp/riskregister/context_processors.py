@@ -43,7 +43,15 @@ def workflow_counts(request):
         if not getattr(request, 'user', None) or not request.user.is_authenticated:
             return data
 
-        # Notifications have been removed; return counts only.
+        # Indicate whether the current user is a RiskOwner (template convenience)
+        try:
+            is_risk_owner = hasattr(request.user, 'risk_owner_profile')
+        except Exception:
+            is_risk_owner = False
+
+        data['is_risk_owner'] = is_risk_owner
+
+        # Notifications have been removed; return counts and helper flags
         return data
     except Exception:
         # If DB/models not ready (migrations) return safe defaults

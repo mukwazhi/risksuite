@@ -1,4 +1,4 @@
-<!-- Top Navigation Bar -->
+<!-- Minimal Default Top Navigation (non-risk-owner) -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary border-bottom">
     <div class="container-fluid">
         <a class="navbar-brand fw-bold d-flex align-items-center" href="{% url 'dashboard' %}">
@@ -9,37 +9,8 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarCollapse">
-            {% if is_risk_owner %}
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'risk_owner_dashboard' %}active{% endif %}" href="{% url 'risk_owner_dashboard' %}">
-                        <i class="fas fa-user-shield me-1"></i> My Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'risk_owner_matrix' %}active{% endif %}" href="{% url 'risk_owner_matrix' %}">
-                        <i class="fas fa-chart-pie me-1"></i> My Matrix
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'risk_report_options' %}">
-                        <i class="fas fa-chart-bar me-1"></i> Reports
-                    </a>
-                </li>
-                {% if user.is_superuser %}
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'notification_preferences' %}active{% endif %}" href="{% url 'notification_preferences' %}">
-                        <i class="fas fa-bell me-1"></i> Notifications
-                    </a>
-                </li>
-                {% endif %}
-            </ul>
-            {% else %}
-            <!-- Non-risk-owner users see only the brand and user menu; no nav links -->
             <ul class="navbar-nav me-auto mb-2 mb-lg-0"></ul>
-            {% endif %}
             <div class="d-flex align-items-center">
-                
                 <div class="dropdown">
                     <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
                         <i class="fas fa-user-circle me-2 fs-5"></i>
@@ -51,7 +22,6 @@
                             <div class="small">{% if user.is_superuser %}Administrator{% else %}Staff User{% endif %}</div>
                         </li>
                         <li><hr class="dropdown-divider"></li>
-                        <!-- Notifications link (admin only) -->
                         {% if user.is_superuser %}
                         <li><a class="dropdown-item" href="{% url 'notification_preferences' %}"><i class="fas fa-bell me-2"></i> Notifications</a></li>
                         {% endif %}

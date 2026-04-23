@@ -248,9 +248,11 @@
                         </nav>
                     </div>
                     <div>
+                        {% if request.user.is_staff or request.user.is_superuser %}
                         <a href="{% url 'download_risk_report' risk_id=risk.risk_id %}" class="btn btn-success btn-sm" target="_blank">
                             <i class="fas fa-file-pdf me-2"></i> Download PDF Report
                         </a>
+                        {% endif %}
                     </div>
                 </div>
 
